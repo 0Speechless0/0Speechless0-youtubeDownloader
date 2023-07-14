@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace youtbue下載介面
 {
+    [Serializable]
     internal class UserInfo
     {
         

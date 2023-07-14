@@ -15,10 +15,6 @@
 
   </Target>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="prebuild.bat" />
-  </Target>
-
   <ItemGroup>
     <None Remove="appsettings.json" />
     <None Remove="myBin\ffmpeg.exe" />
@@ -32,16 +28,27 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="myBin\ffmpeg.exe" />
-    <Content Include="myBin\ffplay.exe" />
-    <Content Include="myBin\ffprobe.exe" />
-    <Content Include="myBin\msvcr100.dll" />
-    <Content Include="myBin\yt-dlp.exe" />
+    <Content Include="myBin\ffmpeg.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="myBin\ffplay.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="myBin\ffprobe.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="myBin\msvcr100.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="myBin\yt-dlp.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
+    <PackageReference Include="WebDav.Client" Version="2.8.0" />
   </ItemGroup>
 
 </Project>

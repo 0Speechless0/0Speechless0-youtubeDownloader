@@ -1,16 +1,16 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using System;
+
+
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using youtbue下載介面;
-Console.WriteLine("Hello, World!");
 
 string uploadHost = new Config().nextCloudHost;
 string strCmdText;
 
-if (!File.Exists(".\\yt-dlp.exe"))
-    System.Diagnostics.Process.Start("CMD.exe", "/C xcopy /Y /Q ..\\..\\..\\myBin\\ .\\ > nul");
+//if (!File.Exists(".\\yt-dlp.exe"))
+//    System.Diagnostics.Process.Start("CMD.exe", "/C xcopy /Y /Q ..\\..\\..\\myBin\\ .\\ > nul");
 
 Console.Write("-------------歡迎使用youtube網址連結下載工具 ^__^------------ " +
     "\n\n注意:請確保歌單所有歌曲下載可行性\n\n\t\t\t\t\t\t\t\t\t\t\t作者:鄧臣宏(Alex) \n" +
@@ -24,24 +24,58 @@ int itemCount = 0;
 listObject targetList = null;
 StringBuilder cmd = new StringBuilder("/C yt-dlp");
 
-string userProfile =  Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-Dictionary<string, listObject>
-    ListDic;
 
-if(File.Exists(".\\tempData.bin"))
+string userProfile =  Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+DataObject dataObject;
+
+if (File.Exists(@".\tempData.bin"))
 {
-    ListDic = Data.ReadFromBinaryFile<Dictionary<string, listObject>>(".\\tempData.bin") ?? new Dictionary<string, listObject>();
+    dataObject = Data.ReadFromBinaryFile<DataObject>(".\\tempData.bin") ?? new DataObject();
 }
 else
 {
-    ListDic = new Dictionary<string, listObject>();
+    dataObject =new DataObject();
 }
-    
+
+if (dataObject.nextCloudUrl == null)
+{
+    Console.WriteLine("nextCloud 資料上傳服務未設置，'請先設置，輸入遠端位置(http(s)://...):");
+    dataObject.nextCloudUrl = Console.ReadLine();
+}
+
+//if (dataObject.userinfo.account == "")
+//{
+//    Console.WriteLine("nextCloud 資料上傳使用者未設置，請先設置，輸入帳號;");
+//    dataObject.userinfo.account = Console.ReadLine();
+//    Console.WriteLine("請輸入密碼");
+//    dataObject.userinfo.password = Console.ReadLine();
+//}
 
 while (true)
 {
-    Console.WriteLine("功能選擇(請輸入數字1 2 3) : 1.單一下載 2.歌單新曲下載 3.歌單舊曲查詢下載");
+    Console.WriteLine("功能選擇(請輸入數字1, 2 ,3 ...) : 1.單一下載 2.歌單新曲下載 3.歌單舊曲查詢下載 4.重置程式資料 5. 更新程式");
     Int16.TryParse(Console.ReadLine(), out short route);
+
+    if(route == 4)
+    {
+        File.Delete(".\\tempData.bin");
+        Console.WriteLine("資料已重置...");
+        continue;
+    }
+    if (route == 5)
+    {
+        Console.WriteLine("更新中，請稍後......");
+        var preProcess = System.Diagnostics.Process.Start(
+            new ProcessStartInfo
+            {
+                RedirectStandardOutput = true,
+                FileName = "cmd.exe",
+                Arguments = "/C yt-dlp -U"
+            });
+        preProcess.WaitForExit();
+        continue;
+    }
+
     Console.WriteLine("請輸入來自youtube官方的下載連結:");
     url = Console.ReadLine();
     string[] urlArr = url.Split('/');
@@ -77,10 +111,10 @@ while (true)
         
         string listCode = urlArg.Length > 0 ? urlArg[0].Split('=')[1] : null ;
         itemCount = listCode.getPlayListItemCount();
-        if (ListDic.TryGetValue(listCode, out targetList))
+        if (dataObject.ListDic.TryGetValue(listCode, out targetList))
         {
 
-            Console.WriteLine($"此歌單已下載至第{targetList.lastDownLoadIndex}，繼續下載後續新增{itemCount - targetList.lastDownLoadIndex}...");
+            Console.WriteLine($"此歌單已下載至第{targetList.lastDownLoadIndex}，下載後續新增{itemCount - targetList.lastDownLoadIndex}首...");
             cmd.Append($" -I {targetList.lastDownLoadIndex + 1}::1");
 
 
@@ -92,9 +126,9 @@ while (true)
                 listName = listCode.getPlayListName()
 
             };
-            ListDic.Add(listCode, targetList);
+            dataObject.ListDic.Add(listCode, targetList);
         }
-        //ListDic.Add(listCode, new listObject
+        //dataObject.ListDic.Add(listCode, new listObject
         //{
 
 
@@ -124,26 +158,44 @@ while (true)
     }
     cmd.Append($" {url}");
     Console.WriteLine(cmd.ToString());
-    var process = System.Diagnostics.Process.Start( 
-        new ProcessStartInfo
-        {
-            RedirectStandardOutput = true,
-            FileName = "cmd.exe",
-            Arguments = cmd.ToString()
-        }    
-    );
-    process.WaitForExit();
-    string pOutput = process.StandardOutput.ReadToEnd();
-    if(targetList is listObject && Regex.Matches(pOutput, "ERROR").Count == 0)
-    {
-        targetList.startIndexHistory.Add(targetList.lastDownLoadIndex);
-        targetList.lastDownLoadIndex = itemCount;
-        targetList.downloadCount++;
+    var process = new System.Diagnostics.Process();
+    StringBuilder cmdOutput = new StringBuilder();
+    process.StartInfo.FileName = "cmd.exe";
+    process.StartInfo.RedirectStandardOutput = true;
+    process.StartInfo.UseShellExecute = false;
+    process.StartInfo.Arguments = cmd.ToString();
+    process.OutputDataReceived += new DataReceivedEventHandler((sender, e) => {
+        cmdOutput.Append(e.Data);
+        Console.WriteLine(e.Data);
 
-        Data.WriteToBinaryFile(@"./tempData", ListDic);
+    });
+
+    process.Start();
+
+
+
+    process.BeginOutputReadLine();
+    process.WaitForExit();
+    if (Regex.Matches(cmdOutput.ToString(), "ERROR").Count == 0)
+    {
+        if(targetList != null)
+        {
+            targetList.startIndexHistory.Add(targetList.lastDownLoadIndex);
+            targetList.lastDownLoadIndex += itemCount;
+            targetList.downloadCount++;
+        }
+
+
+        Data.WriteToBinaryFile(@".\tempData.bin", new DataObject
+        {
+            ListDic = dataObject.ListDic,
+            userinfo = dataObject.userinfo,
+            nextCloudUrl = dataObject.nextCloudUrl
+
+        });
 
     }
-
     Console.WriteLine("是否繼續?(y/n)");
-    if (Console.ReadLine() != "y") break;  
+    if (Console.ReadLine() != "y") break;
+
 }
