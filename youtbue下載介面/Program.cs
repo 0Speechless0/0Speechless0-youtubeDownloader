@@ -1,6 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 
+using PanoramicData.ConsoleExtensions;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -8,6 +9,7 @@ using youtbue下載介面;
 
 string uploadHost = new Config().nextCloudHost;
 string strCmdText;
+DateTime downloadStart;
 
 //if (!File.Exists(".\\yt-dlp.exe"))
 //    System.Diagnostics.Process.Start("CMD.exe", "/C xcopy /Y /Q ..\\..\\..\\myBin\\ .\\ > nul");
@@ -18,8 +20,8 @@ Console.Write("-------------歡迎使用youtube網址連結下載工具 ^__^----
 string url;
 string[] urlArg;
 string format;
-string dirName;
-string outputPath;
+
+string outputPath = null ;
 int itemCount = 0;
 listObject targetList = null;
 StringBuilder cmd = new StringBuilder("/C yt-dlp");
@@ -37,19 +39,56 @@ else
     dataObject =new DataObject();
 }
 
+
 if (dataObject.nextCloudUrl == null)
 {
-    Console.WriteLine("nextCloud 資料上傳服務未設置，'請先設置，輸入遠端位置(http(s)://...):");
-    dataObject.nextCloudUrl = Console.ReadLine();
+
+        Console.WriteLine("nextCloud 資料上傳服務未設置，按enter 跳過，否則請先設置，輸入雲端位置(http(s)://...):");
+        dataObject.nextCloudUrl = Console.ReadLine();
+
+}
+Console.WriteLine("資料檢查中，請稍後...");
+webDavHandler webDavHandler;
+try { 
+
+    webDavHandler = new webDavHandler(dataObject, "youtubeDownload");
+
+}
+catch (Exception e){
+    Console.WriteLine("無雲端連線建立，使用本地模式");
+    webDavHandler = new webDavHandler();
 }
 
-//if (dataObject.userinfo.account == "")
-//{
-//    Console.WriteLine("nextCloud 資料上傳使用者未設置，請先設置，輸入帳號;");
-//    dataObject.userinfo.account = Console.ReadLine();
-//    Console.WriteLine("請輸入密碼");
-//    dataObject.userinfo.password = Console.ReadLine();
-//}
+bool authCheck = false;
+while (!authCheck && webDavHandler.isConnection)
+{
+
+
+    if (await webDavHandler.checkAuth() ) break;
+    else
+    {
+        if(dataObject.userinfo.account == null)
+        {
+            Console.WriteLine("nextCloud 資料上傳使用者未設置，請先設置");
+        }
+        else
+        {
+            Console.WriteLine("輸入帳號認證失敗，請重新輸入");
+        }
+        Console.WriteLine("輸入帳號:");
+        dataObject.userinfo.account = Console.ReadLine();
+        Console.WriteLine("請輸入密碼");
+        dataObject.userinfo.password = ConsolePlus.ReadPassword();
+        Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
+        webDavHandler = new webDavHandler(dataObject, "youtubeDownload");
+    }
+}
+if(webDavHandler.isConnection &&  await webDavHandler.updateOrCreateTempData() )
+{
+    dataObject = await webDavHandler.checkOrDownloadTempData();
+}
+
+
 
 while (true)
 {
@@ -136,8 +175,13 @@ while (true)
 
     }
 
-    Console.WriteLine("請輸入輸出資料夾名稱");
-    dirName = Console.ReadLine();
+
+    if(targetList.dirName == null)
+    {
+        Console.WriteLine("請輸入輸出資料夾名稱");
+        targetList.dirName = Console.ReadLine();
+    }
+   
 
     Console.WriteLine("請輸入下載格式(video/audio) :");
     string downloadType = Console.ReadLine().downLoadTypeCheck() ;
@@ -147,12 +191,12 @@ while (true)
         {
             Console.WriteLine("請輸入格式(best/aac/flac/mp3/m4a/opus/vorbis/wav): \n");
             format = Console.ReadLine();
-            outputPath = Path.Combine(userProfile, $"Music\\{dirName}\\%(title)s.%(ext)s");
+            outputPath = Path.Combine(userProfile, $"Music\\{targetList.dirName}\\%(title)s.%(ext)s");
             cmd.Append($" -x --audio-format {format} -o {outputPath}");
         } 
         if(downloadType.Equals("video"))
         {
-            outputPath = Path.Combine(userProfile, $"Videos\\{dirName}\\%(title)s.%(ext)s");
+            outputPath = Path.Combine(userProfile, $"Videos\\{targetList.dirName}\\%(title)s.%(ext)s");
             cmd.Append($" -f best -o {outputPath}");
         }
     }
@@ -169,31 +213,34 @@ while (true)
         Console.WriteLine(e.Data);
 
     });
-
+    downloadStart = DateTime.Now;
     process.Start();
-
 
 
     process.BeginOutputReadLine();
     process.WaitForExit();
-    if (Regex.Matches(cmdOutput.ToString(), "ERROR").Count == 0)
+    //這裡不一定match到error
+    if (Regex.Matches(cmdOutput.ToString(), "Error").Count == 0)
     {
         if(targetList != null)
         {
             targetList.startIndexHistory.Add(targetList.lastDownLoadIndex);
-            targetList.lastDownLoadIndex += itemCount;
+            targetList.lastDownLoadIndex = itemCount  ;
             targetList.downloadCount++;
+            Console.WriteLine("請輸入這次下載系列的別名:");
+            string partialName = Console.ReadLine();
+            targetList.HistoryListName.Add(DateTime.Now.ToString("yyyy/MM/dd HH:ii:ss")+$"({partialName})" );
+
+            if( webDavHandler.isConnection)
+            {
+                await webDavHandler.uploadFile(Path.GetDirectoryName(outputPath), targetList.dirName, downloadStart);
+                await webDavHandler.updateTempData(@".\tempData.bin");
+            }
+
         }
 
 
-        Data.WriteToBinaryFile(@".\tempData.bin", new DataObject
-        {
-            ListDic = dataObject.ListDic,
-            userinfo = dataObject.userinfo,
-            nextCloudUrl = dataObject.nextCloudUrl
-
-        });
-
+        Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
     }
     Console.WriteLine("是否繼續?(y/n)");
     if (Console.ReadLine() != "y") break;

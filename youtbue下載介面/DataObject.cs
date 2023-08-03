@@ -13,5 +13,10 @@ namespace youtbue下載介面
         public Dictionary<string, listObject> ListDic;
         public UserInfo userinfo;
         public string nextCloudUrl;
+
+        public DataObject() { 
+            userinfo = new UserInfo();
+            ListDic = new Dictionary<string, listObject>();
+        } 
     }
 }

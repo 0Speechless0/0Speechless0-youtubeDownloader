@@ -1,1 +1,0 @@
-xcopy /Y /Q .\myBin\ .\bin\Debug\net6.0\ > nul
