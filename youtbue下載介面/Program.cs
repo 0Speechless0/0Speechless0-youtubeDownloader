@@ -23,12 +23,25 @@ string format;
 
 string outputPath = null ;
 int itemCount = 0;
-listObject targetList = null;
+listObject targetList = new listObject();
 StringBuilder cmd = new StringBuilder("/C yt-dlp");
+ffmpegHandler ffmpegHandler = new ffmpegHandler();
+ytdlpHandler ytdlpHandler = new ytdlpHandler();
 
 
 string userProfile =  Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 DataObject dataObject;
+if(!File.Exists(@".\ytdlp.exe"))
+{
+    Console.WriteLine("未發現ytdlp組件，尋找下載...");
+    await ytdlpHandler.install();
+}
+
+if (!File.Exists(@".\ffmpeg.exe") || !File.Exists(@".\ffplay.exe") || !File.Exists(@".\ffprobe.exe"))
+{
+    Console.WriteLine("未發現ffmpeg組件，尋找下載...");
+    await ffmpegHandler.install();
+}
 
 if (File.Exists(@".\tempData.bin"))
 {
