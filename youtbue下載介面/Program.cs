@@ -73,7 +73,7 @@ catch (Exception e){
 }
 
 bool authCheck = false;
-while (!authCheck && webDavHandler.isConnection)
+while (!authCheck)
 {
 
 
@@ -94,12 +94,16 @@ while (!authCheck && webDavHandler.isConnection)
         dataObject.userinfo.password = ConsolePlus.ReadPassword();
         Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
         webDavHandler = new webDavHandler(dataObject, "youtubeDownload");
+
+        if (webDavHandler.isConnection)
+        {
+            dataObject = await webDavHandler.checkOrDownloadTempData();
+            Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
+            break;
+        }
     }
 }
-if(webDavHandler.isConnection &&  await webDavHandler.updateOrCreateTempData() )
-{
-    dataObject = await webDavHandler.checkOrDownloadTempData();
-}
+
 
 
 
