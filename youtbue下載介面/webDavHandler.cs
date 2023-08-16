@@ -17,21 +17,36 @@ namespace youtbue下載介面
         private bool auth = false;
         private WebDavClient webDavClient;
         PropfindResponse tempDataFileResult;
+        PropfindParameters propfindParamters = new PropfindParameters
+        {
+            RequestType = PropfindRequestType.NamedProperties,
+            Namespaces = new[] {
+                    new  NamespaceAttr("d", "DAV:"),
+                    new NamespaceAttr("oc", "http://owncloud.org/ns"),
+                    new NamespaceAttr("nc", "http://nextcloud.org/ns")
+                },
+            CustomProperties = new[] {
+                    XName.Get("displayname", "DAV:") ,
+                    XName.Get("getlastmodified", "DAV:") ,
+                    XName.Get("getcontenttype", "DAV:")
+                }
+        };
         private string videoDir;
         private string audioDir;
-        public bool isConnection { get; set; }
+        public bool isConnection { get; set; } = false;
         
         public webDavHandler(
         )
         {
             isConnection = false;
-            var userProfileDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            audioDir = Path.Combine(userProfileDir, "Music");
-            videoDir = Path.Combine(userProfileDir, "Videos");
+
         }
         public webDavHandler(DataObject data, string dir = "")
         {
             UserInfo userInfo = data.userinfo;
+            var userProfileDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            audioDir = Path.Combine(userProfileDir, "Music");
+            videoDir = Path.Combine(userProfileDir, "Videos");
 
             var baseUrl = $"{data.nextCloudUrl}/remote.php/dav/files/{userInfo.account}/{dir}/";
 
@@ -40,21 +55,7 @@ namespace youtbue下載介面
                 BaseAddress = new Uri(baseUrl),
                 Credentials = new NetworkCredential(userInfo.account, userInfo.password)
             });
-            tempDataFileResult = webDavClient.Propfind("data", new PropfindParameters {
-                RequestType = PropfindRequestType.NamedProperties,
-                Namespaces = new[] { 
-                    new  NamespaceAttr("d", "DAV:"), 
-                    new NamespaceAttr("oc", "http://owncloud.org/ns"),
-                    new NamespaceAttr("nc", "http://nextcloud.org/ns")
-                },
-                CustomProperties = new[] { 
-                    XName.Get("displayname", "DAV:") ,
-                    XName.Get("getlastmodified", "DAV:") ,
-                    XName.Get("getcontenttype", "DAV:"),
-                    XName.Get("creationdate", "DAV:")
-                }
-
-            }).Result;
+            tempDataFileResult = webDavClient.Propfind("data", propfindParamters).Result;
             
             if(tempDataFileResult.StatusCode == 404)
             {
@@ -107,21 +108,22 @@ namespace youtbue下載介面
                 .Select(file => new FileInfo(file))
                 .OrderBy(file => file.LastAccessTime)
                 .Where(file => file.LastAccessTime > downloadStart);
-
+            webDavClient.Mkcol($"{dirName}");
             foreach (var file in files)
             {
-                await webDavClient.PutFile($"{dirName}/{file.Name}", File.OpenRead(file.FullName));
+
+                var result = await webDavClient.PutFile($"{dirName}/{file.Name}", File.OpenRead(file.FullName));
             }
 
         }
         public async Task<DataObject> checkOrDownloadTempData()
         {
             if (tempDataFileResult.StatusCode == 404) return null;
-            using (var response = webDavClient.GetRawFile("data/tempData.bin"))
+            using (var response = await webDavClient.GetRawFile("data/tempData.bin"))
             {
                 using(var fileStream = File.Create(@".\tempData.bin"))
                 {
-                    response.Result.Stream.CopyTo(fileStream);
+                    response.Stream.CopyTo(fileStream);
                 }
             }
             return Data.ReadFromBinaryFile<DataObject>(".\\tempData.bin") ?? new DataObject();
@@ -139,7 +141,7 @@ namespace youtbue下載介面
             var fileNameList =  await getFileNameListByFilter(listObject, filter);
             foreach(var file in fileNameList)
             {
-                using (var response = webDavClient.GetRawFile($"{listObject.dirName}/{file.DisplayName}"))
+                using (var response = await webDavClient.GetRawFile($"{listObject.listName}/{file.DisplayName}"))
                 {
                     string dir ="";
                     if(file.ContentType.StartsWith("video"))
@@ -150,29 +152,42 @@ namespace youtbue下載介面
                     {
                         dir = audioDir;
                     }
-                    using (var fileStream = File.Create(Path.Combine(dir, $"{listObject.dirName}/{file.DisplayName}")))
+                    if(!Directory.Exists(Path.Combine(dir, $"{listObject.listName}"))) 
+                        Directory.CreateDirectory(Path.Combine(dir, $"{listObject.listName}"));
+                    using (var fileStream = File.Create(Path.Combine(dir, $"{listObject.listName}/{file.DisplayName}")))
                     {
-                        response.Result.Stream.CopyTo(fileStream);
+                        response.Stream.CopyTo(fileStream);
                     }
                 }
             }
         }
         private async Task<IEnumerable<WebDavResource>> getFileNameListByFilter(listObject listObject, string filter)
         {
-            var response =  await webDavClient.Propfind($"{listObject.dirName}");
+            var response =  await webDavClient.Propfind($"{listObject.listName}", propfindParamters);
           
-            if (filter.Contains("~"))
+            if(Int32.TryParse(filter, out int index))
+            {
+                int startIndex = listObject.HistoryDownloadList[index-1].startIndex;
+                int endIndex = listObject.HistoryDownloadList[index - 1].endIndex;
+                return response.Resources.OrderBy(r => r.LastModifiedDate)
+                    .Skip(startIndex)
+                    .Take(endIndex);
+
+            }
+            else if (filter.Contains("~"))
             {
                 int[] arr = filter.Split("~").Select(r => Convert.ToInt32(r) ).ToArray();
-                if (arr.Length != 2 || arr[0] >= arr[1]) throw new Exception("編號範圍設定錯誤");
+                if (arr.Length != 2) throw new Exception("編號範圍設定錯誤");
 
-
-                if (arr[0] > 0 && arr[1] < listObject.startIndexHistory.Count())
+                int min = Math.Min(arr[0], arr[1]);
+                int max = Math.Max(arr[0], arr[1]);
+                if (min > 0 && max < listObject.startIndexHistory.Count())
                 {
-                    int startIndex = listObject.startIndexHistory[arr[0] - 1];
-                    int endIndex = arr[1] < listObject.startIndexHistory.Count() ?
-                    listObject.startIndexHistory[arr[1]] : listObject.lastDownLoadIndex;
-                    return response.Resources.OrderBy(r => r.CreationDate)
+                    int startIndex = listObject.HistoryDownloadList[min - 1].startIndex;
+                    int endIndex = listObject.HistoryDownloadList[max - 1].endIndex;
+                    //int endIndex = arr[1] < listObject.startIndexHistory.Count() ?
+                    //listObject.startIndexHistory[arr[1]] : listObject.lastDownLoadIndex;
+                    return response.Resources.OrderBy(r => r.LastModifiedDate)
                         .Skip(startIndex)
                         .Take(endIndex);
 
@@ -194,9 +209,10 @@ namespace youtbue下載介面
                     int historyIndex = (i % 10) - 1;
                     resuult.AddRange(response.Resources.OrderBy(r => r.CreationDate)
                         .ToList()
-                        .GetRange(listObject.startIndexHistory[i], 
-                        i + 1 < listObject.startIndexHistory.Count() ? 
-                        listObject.startIndexHistory[i + 1] : listObject.lastDownLoadIndex - listObject.startIndexHistory[i])
+                        .GetRange(
+                            listObject.HistoryDownloadList[i].startIndex,
+                            listObject.HistoryDownloadList[i].endIndex
+                        )
                     );
 
 

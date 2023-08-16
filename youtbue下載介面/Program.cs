@@ -31,7 +31,7 @@ ytdlpHandler ytdlpHandler = new ytdlpHandler();
 
 string userProfile =  Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 DataObject dataObject;
-if(!File.Exists(@".\ytdlp.exe"))
+if(!File.Exists(@".\yt-dlp.exe"))
 {
     Console.WriteLine("未發現ytdlp組件，尋找下載...");
     await ytdlpHandler.install();
@@ -45,7 +45,7 @@ if (!File.Exists(@".\ffmpeg.exe") || !File.Exists(@".\ffplay.exe") || !File.Exis
 
 if (File.Exists(@".\tempData.bin"))
 {
-    dataObject = Data.ReadFromBinaryFile<DataObject>(".\\tempData.bin") ?? new DataObject();
+    dataObject = Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
 }
 else
 {
@@ -65,6 +65,39 @@ webDavHandler webDavHandler;
 try { 
 
     webDavHandler = new webDavHandler(dataObject, "youtubeDownload");
+    bool authCheck = false;
+    while (!authCheck)
+    {
+
+
+        if (await webDavHandler.checkAuth()) break;
+        else
+        {
+            if (dataObject.userinfo.account == null)
+            {
+                Console.WriteLine("nextCloud 資料上傳使用者未設置，請先設置");
+            }
+            else
+            {
+                Console.WriteLine("輸入帳號認證失敗，請重新輸入");
+            }
+            Console.WriteLine("輸入帳號:");
+            dataObject.userinfo.account = Console.ReadLine();
+            Console.WriteLine("請輸入密碼:");
+            dataObject.userinfo.password = ConsolePlus.ReadPassword();
+            Console.WriteLine();
+            Console.WriteLine("請稍後...");
+            webDavHandler = new webDavHandler(dataObject, "youtubeDownload");
+
+
+            if (await webDavHandler.checkAuth())
+            {
+                dataObject = await webDavHandler.checkOrDownloadTempData();
+                Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
+                break;
+            }
+        }
+    }
 
 }
 catch (Exception e){
@@ -72,51 +105,76 @@ catch (Exception e){
     webDavHandler = new webDavHandler();
 }
 
-bool authCheck = false;
-while (!authCheck)
-{
 
-
-    if (await webDavHandler.checkAuth() ) break;
-    else
-    {
-        if(dataObject.userinfo.account == null)
-        {
-            Console.WriteLine("nextCloud 資料上傳使用者未設置，請先設置");
-        }
-        else
-        {
-            Console.WriteLine("輸入帳號認證失敗，請重新輸入");
-        }
-        Console.WriteLine("輸入帳號:");
-        dataObject.userinfo.account = Console.ReadLine();
-        Console.WriteLine("請輸入密碼");
-        dataObject.userinfo.password = ConsolePlus.ReadPassword();
-        Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
-        webDavHandler = new webDavHandler(dataObject, "youtubeDownload");
-
-        if (webDavHandler.isConnection)
-        {
-            dataObject = await webDavHandler.checkOrDownloadTempData();
-            Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
-            break;
-        }
-    }
-}
 
 
 
 
 while (true)
 {
-    Console.WriteLine("功能選擇(請輸入數字1, 2 ,3 ...) : 1.單一下載 2.歌單新曲下載 3.歌單舊曲查詢下載 4.重置程式資料 5. 更新程式");
-    Int16.TryParse(Console.ReadLine(), out short route);
+    if (await webDavHandler.checkAuth())
+        Console.WriteLine("功能選擇(請輸入數字1, 2 ,3 ...) : 1.單一下載 2.歌單新曲下載 3.歌單舊曲查詢下載 4.重置程式資料 5. 更新程式");
+    else
+        Console.WriteLine("功能選擇(請輸入數字1, 2 ...) : 1.單一下載 2.歌單新曲下載 5. 更新程式");
+    if (!Int16.TryParse(Console.ReadLine(), out short route))
+    {
+        Console.WriteLine("請依上述格式輸入");
+        continue;
+    }
+    if (route == 3)
+    {
+        DataObjectHandler dataObjectHandler = new DataObjectHandler(dataObject);
 
-    if(route == 4)
+        while (true)
+        {
+            dataObjectHandler.showListName().ForEach(text => Console.WriteLine(text));
+            Console.WriteLine("請輸入清單代碼，輸入0結束:");
+            listObject lookup;
+            if (Int32.TryParse(Console.ReadLine(), out int index))
+            {
+                if (index == 0)
+                {
+                    break;
+                }
+                while (true)
+                {
+                    var historyList = dataObjectHandler.showListHistory(index);
+                    lookup = dataObjectHandler.GetListObject(index);
+                    historyList.Reverse();
+                    historyList.ForEach(text => Console.WriteLine(text));
+                    Console.WriteLine("請輸入代碼範圍，輸入 1~5 下載1,2,3,4,5紀錄的項目，輸入1,4,5 下載1 4 5 紀錄的項目:");
+                    string filter = Console.ReadLine() ?? "";
+                    try
+                    {
+                        Console.WriteLine("檔案下載中...");
+                        await webDavHandler.downloadByfilter(lookup, filter);
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("錯誤 :" + e.Message);
+                        Console.WriteLine("請輸入數字!，如(1)[率性一下][2022-12-12]，要下載紀錄[率性一下]的項目，請輸入數字1");
+
+                        continue;
+                    }
+
+                }
+
+            }
+            else
+            {
+                Console.WriteLine("請輸入數字!，如(1)[今天我不好]，要查看清單[今天我不好]紀錄，請輸入數字1");
+                continue;
+            }
+
+        }
+        continue;
+    }
+    if (route == 4)
     {
         File.Delete(".\\tempData.bin");
         Console.WriteLine("資料已重置...");
-        continue;
+        break;
     }
     if (route == 5)
     {
@@ -169,7 +227,7 @@ while (true)
         itemCount = listCode.getPlayListItemCount();
         if (dataObject.ListDic.TryGetValue(listCode, out targetList))
         {
-
+            //targetList.lastDownLoadIndex = 0;   
             Console.WriteLine($"此歌單已下載至第{targetList.lastDownLoadIndex}，下載後續新增{itemCount - targetList.lastDownLoadIndex}首...");
             cmd.Append($" -I {targetList.lastDownLoadIndex + 1}::1");
 
@@ -182,6 +240,7 @@ while (true)
                 listName = listCode.getPlayListName()
 
             };
+            if (targetList.dirName == "") targetList.dirName = targetList.listName;
             dataObject.ListDic.Add(listCode, targetList);
         }
         //dataObject.ListDic.Add(listCode, new listObject
@@ -237,27 +296,41 @@ while (true)
     process.BeginOutputReadLine();
     process.WaitForExit();
     //這裡不一定match到error
-    if (Regex.Matches(cmdOutput.ToString(), "Error").Count == 0)
+    if (Regex.Matches(cmdOutput.ToString(), "Error").Count == 0 && itemCount - targetList.lastDownLoadIndex > 0)
     {
         if(targetList != null)
         {
-            targetList.startIndexHistory.Add(targetList.lastDownLoadIndex);
-            targetList.lastDownLoadIndex = itemCount  ;
+            var historyDownload = new HistoryDownload();
+            historyDownload.startIndex = targetList.lastDownLoadIndex;
+            historyDownload.endIndex = targetList.lastDownLoadIndex + itemCount;
+            targetList.lastDownLoadIndex = targetList.lastDownLoadIndex + itemCount;
             targetList.downloadCount++;
-            Console.WriteLine("請輸入這次下載系列的別名:");
-            string partialName = Console.ReadLine();
-            targetList.HistoryListName.Add(DateTime.Now.ToString("yyyy/MM/dd HH:ii:ss")+$"({partialName})" );
+
 
             if( webDavHandler.isConnection)
             {
-                await webDavHandler.uploadFile(Path.GetDirectoryName(outputPath), targetList.dirName, downloadStart);
+                Console.WriteLine("上傳雲端中...");
+                await webDavHandler.uploadFile(Path.GetDirectoryName(outputPath), targetList.listName, downloadStart);
+
+                Console.WriteLine("請輸入這次下載系列的別名:");
+                string partialName = Console.ReadLine();
+                historyDownload.CreateTime = downloadStart;
+                historyDownload.Name = partialName;
+                targetList.HistoryDownloadList.Add(historyDownload);
+                Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
+
                 await webDavHandler.updateTempData(@".\tempData.bin");
+               
+            }
+            else
+            {
+                Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
             }
 
         }
 
 
-        Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
+
     }
     Console.WriteLine("是否繼續?(y/n)");
     if (Console.ReadLine() != "y") break;

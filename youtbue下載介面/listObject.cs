@@ -19,5 +19,7 @@ namespace youtbue下載介面
 
         public List<string> HistoryListName { get; set; } = new List<string>();
 
+
+        public List<HistoryDownload> HistoryDownloadList { get; set; } = new List<HistoryDownload>();
     }
 }
