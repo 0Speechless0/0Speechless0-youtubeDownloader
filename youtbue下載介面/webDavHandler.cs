@@ -102,12 +102,12 @@ namespace youtbue下載介面
             var uploadResult = await webDavClient.PutFile("data/tempData.bin", File.OpenRead(path));
         }
 
-        public async Task uploadFile(string? dir, string? dirName,DateTime downloadStart)
+        public async Task uploadFile(string? dir, string? dirName,DateTime? downloadStart)
         {
             var files = Directory.GetFiles(dir)
                 .Select(file => new FileInfo(file))
-                .OrderBy(file => file.LastAccessTime)
-                .Where(file => file.LastAccessTime > downloadStart);
+                .OrderBy(file => file.CreationTime)
+                .Where(file => file.CreationTime > downloadStart);
             webDavClient.Mkcol($"{dirName}");
             foreach (var file in files)
             {

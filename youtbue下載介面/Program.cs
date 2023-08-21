@@ -52,6 +52,19 @@ else
     dataObject =new DataObject();
 }
 
+//test
+dataObject = new DataObject()
+{
+    userinfo = new UserInfo()
+    {
+        password = "a314622581246",
+        account = "kbb37038106"
+    },
+    nextCloudUrl = "http://125.229.177.91"
+};
+
+
+
 
 if (dataObject.nextCloudUrl == null)
 {
@@ -104,8 +117,6 @@ catch (Exception e){
     Console.WriteLine("無雲端連線建立，使用本地模式");
     webDavHandler = new webDavHandler();
 }
-
-
 
 
 
@@ -240,7 +251,7 @@ while (true)
                 listName = listCode.getPlayListName()
 
             };
-            if (targetList.dirName == "") targetList.dirName = targetList.listName;
+            targetList.dirName = targetList.listName;
             dataObject.ListDic.Add(listCode, targetList);
         }
         //dataObject.ListDic.Add(listCode, new listObject
@@ -268,14 +279,17 @@ while (true)
             Console.WriteLine("請輸入格式(best/aac/flac/mp3/m4a/opus/vorbis/wav): \n");
             format = Console.ReadLine();
             outputPath = Path.Combine(userProfile, $"Music\\{targetList.dirName}\\%(title)s.%(ext)s");
-            cmd.Append($" -x --audio-format {format} -o {outputPath}");
+            cmd.Append($" -x --audio-format {format} -o \"{outputPath}\"");
         } 
         if(downloadType.Equals("video"))
         {
             outputPath = Path.Combine(userProfile, $"Videos\\{targetList.dirName}\\%(title)s.%(ext)s");
-            cmd.Append($" -f best -o {outputPath}");
+            cmd.Append($" -f best -o \"{outputPath}\"");
         }
+        if(!Directory.Exists(Path.GetDirectoryName(outputPath)))
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
     }
+
     cmd.Append($" {url}");
     Console.WriteLine(cmd.ToString());
     var process = new System.Diagnostics.Process();
@@ -296,41 +310,33 @@ while (true)
     process.BeginOutputReadLine();
     process.WaitForExit();
     //這裡不一定match到error
-    if (Regex.Matches(cmdOutput.ToString(), "Error").Count == 0 && itemCount - targetList.lastDownLoadIndex > 0)
+    if (Regex.Matches(cmdOutput.ToString(), "Error").Count == 0
+        && Regex.Matches(cmdOutput.ToString(), "error").Count == 0
+        && itemCount - targetList.lastDownLoadIndex > 0)
     {
-        if(targetList != null)
+        var historyDownload = new HistoryDownload();
+        historyDownload.startIndex = targetList.lastDownLoadIndex;
+        historyDownload.endIndex = targetList.lastDownLoadIndex + itemCount;
+        targetList.lastDownLoadIndex = targetList.lastDownLoadIndex + itemCount;
+        targetList.downloadCount++;
+
+
+        if( webDavHandler.isConnection)
         {
-            var historyDownload = new HistoryDownload();
-            historyDownload.startIndex = targetList.lastDownLoadIndex;
-            historyDownload.endIndex = targetList.lastDownLoadIndex + itemCount;
-            targetList.lastDownLoadIndex = targetList.lastDownLoadIndex + itemCount;
-            targetList.downloadCount++;
+            Console.WriteLine("上傳雲端中...");
+            await webDavHandler.uploadFile(Path.GetDirectoryName(outputPath), targetList.listName, downloadStart);
+
+            Console.WriteLine("請輸入這次下載系列的別名:");
+            string partialName = Console.ReadLine();
+            historyDownload.CreateTime = downloadStart;
+            historyDownload.Name = partialName;
+            targetList.HistoryDownloadList.Add(historyDownload);
 
 
-            if( webDavHandler.isConnection)
-            {
-                Console.WriteLine("上傳雲端中...");
-                await webDavHandler.uploadFile(Path.GetDirectoryName(outputPath), targetList.listName, downloadStart);
-
-                Console.WriteLine("請輸入這次下載系列的別名:");
-                string partialName = Console.ReadLine();
-                historyDownload.CreateTime = downloadStart;
-                historyDownload.Name = partialName;
-                targetList.HistoryDownloadList.Add(historyDownload);
-                Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
-
-                await webDavHandler.updateTempData(@".\tempData.bin");
+            await webDavHandler.updateTempData(@".\tempData.bin");
                
-            }
-            else
-            {
-                Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
-            }
-
         }
-
-
-
+        Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
     }
     Console.WriteLine("是否繼續?(y/n)");
     if (Console.ReadLine() != "y") break;
