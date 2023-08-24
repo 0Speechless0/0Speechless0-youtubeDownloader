@@ -9,6 +9,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using WebDav;
+using static System.Net.WebRequestMethods;
+using File = System.IO.File;
 
 namespace youtbue下載介面
 {
@@ -34,7 +36,9 @@ namespace youtbue下載介面
         private string videoDir;
         private string audioDir;
         public bool isConnection { get; set; } = false;
-        
+
+        //private bool startUpload;
+        //public Queue<string> uploadFileQueue = new Queue<string>();
         public webDavHandler(
         )
         {
@@ -102,15 +106,63 @@ namespace youtbue下載介面
             var uploadResult = await webDavClient.PutFile("data/tempData.bin", File.OpenRead(path));
         }
 
-        public async Task uploadFile(string? dir, string? dirName,DateTime? downloadStart)
+        //public void insertNewestFileToQueue(string? dir)
+        //{
+        //    var file = Directory.GetFiles(dir)
+        //        .Select(file => new FileInfo(file))
+        //        .Where(file => !file.Name.Contains(".webm"))
+        //        .OrderByDescending(file => file.CreationTime)
+        //        .FirstOrDefault();
+        //    uploadFileQueue.Enqueue(file.Name);
+        //}
+        //public void endUpload()
+        //{
+        //    this.startUpload = false;
+        //}
+        //public bool isUploading()
+        //{
+        //    return startUpload || uploadFileQueue.Count > 0;
+        //}
+        //public async Task uploadNewestFileInQueue(string? dir, string dirName)
+        //{
+        //    startUpload = true;
+        //    do
+        //    {
+        //        if(uploadFileQueue.Count > 0)
+        //        {
+        //            var fileName = uploadFileQueue.Dequeue();
+        //            Console.WriteLine($"上傳 {fileName} ...");
+        //            var fullName = Path.Combine(dir, fileName);
+        //            var result = await webDavClient.PutFile($"{dirName}/{fileName}", File.OpenRead(fullName));
+        //        }
+
+        //    } while (startUpload || uploadFileQueue.Count > 0);
+            
+        //    //var file = Directory.GetFiles(dir)
+        //    //    .Select(file => new FileInfo(file))
+        //    //    .Where(file => !file.Name.Contains(".webm"))
+        //    //    .OrderByDescending(file => file.CreationTime)
+        //    //    .FirstOrDefault();
+        //    //webDavClient.Mkcol($"{dirName}");
+        //    //if (file != null)
+        //    //{
+        //    //    Console.WriteLine($"上傳 {file.Name} ...");
+
+        //    //    var result = await webDavClient.PutFile($"{dirName}/{file.Name}", File.OpenRead(file.FullName));
+        //    //}    
+        //}
+        public async Task uploadFile(string? dir, string dirName, DateTime? beginTime)
         {
+            beginTime = beginTime ?? DateTime.MinValue;
             var files = Directory.GetFiles(dir)
                 .Select(file => new FileInfo(file))
                 .OrderBy(file => file.CreationTime)
-                .Where(file => file.CreationTime > downloadStart);
+                .Where(file => file.CreationTime > beginTime );
             webDavClient.Mkcol($"{dirName}");
+            int i = 0;
             foreach (var file in files)
             {
+                Console.WriteLine($"上傳 {file.Name} ({++i}/{files.Count()}) ...");
 
                 var result = await webDavClient.PutFile($"{dirName}/{file.Name}", File.OpenRead(file.FullName));
             }

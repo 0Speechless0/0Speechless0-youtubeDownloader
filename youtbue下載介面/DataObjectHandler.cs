@@ -34,5 +34,10 @@ namespace youtbue下載介面
                 .HistoryDownloadList
                 .Select(row => $"({++i})({row.Name})[{row.CreateTime}]").ToList();
         }
+
+        public void updateDownloadIndex(string listCode, int i)
+        {
+            DataObject.ListDic[listCode].lastDownLoadIndex = i;
+        }
     }
 }

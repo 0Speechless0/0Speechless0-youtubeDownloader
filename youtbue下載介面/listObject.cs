@@ -11,7 +11,8 @@ namespace youtbue下載介面
     {
         public string listCode { get; set; }
         public int downloadCount { get; set; } = 0;
-        public int lastDownLoadIndex { get; set; } = 1;
+        public int lastDownLoadIndex { get; set; } = 0;
+        public DateTime lastUploadTime { get; set; }
         public string dirName {get;set ;}
 
         public string listName { get; set; }

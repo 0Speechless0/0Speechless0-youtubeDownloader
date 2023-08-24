@@ -24,7 +24,7 @@ string format;
 string outputPath = null ;
 int itemCount = 0;
 listObject targetList = new listObject();
-StringBuilder cmd = new StringBuilder("/C yt-dlp");
+
 ffmpegHandler ffmpegHandler = new ffmpegHandler();
 ytdlpHandler ytdlpHandler = new ytdlpHandler();
 
@@ -52,16 +52,7 @@ else
     dataObject =new DataObject();
 }
 
-//test
-dataObject = new DataObject()
-{
-    userinfo = new UserInfo()
-    {
-        password = "a314622581246",
-        account = "kbb37038106"
-    },
-    nextCloudUrl = "http://125.229.177.91"
-};
+
 
 
 
@@ -123,6 +114,7 @@ catch (Exception e){
 
 while (true)
 {
+    StringBuilder cmd = new StringBuilder("/C yt-dlp");
     if (await webDavHandler.checkAuth())
         Console.WriteLine("功能選擇(請輸入數字1, 2 ,3 ...) : 1.單一下載 2.歌單新曲下載 3.歌單舊曲查詢下載 4.重置程式資料 5. 更新程式");
     else
@@ -130,6 +122,13 @@ while (true)
     if (!Int16.TryParse(Console.ReadLine(), out short route))
     {
         Console.WriteLine("請依上述格式輸入");
+        continue;
+    }
+    if(route == 0)
+    {
+        Console.WriteLine("請輸入初始化的清單編碼 :");
+        string code = Console.ReadLine();
+        Test.init(dataObject, code);
         continue;
     }
     if (route == 3)
@@ -251,9 +250,9 @@ while (true)
                 listName = listCode.getPlayListName()
 
             };
-            targetList.dirName = targetList.listName;
             dataObject.ListDic.Add(listCode, targetList);
         }
+        targetList.dirName = targetList.listName;
         //dataObject.ListDic.Add(listCode, new listObject
         //{
 
@@ -263,11 +262,11 @@ while (true)
     }
 
 
-    if(targetList.dirName == null)
-    {
-        Console.WriteLine("請輸入輸出資料夾名稱");
-        targetList.dirName = Console.ReadLine();
-    }
+    //if(targetList.dirName == null)
+    //{
+    //    Console.WriteLine("請輸入輸出資料夾名稱");
+    //    targetList.dirName = Console.ReadLine();
+    //}
    
 
     Console.WriteLine("請輸入下載格式(video/audio) :");
@@ -284,7 +283,7 @@ while (true)
         if(downloadType.Equals("video"))
         {
             outputPath = Path.Combine(userProfile, $"Videos\\{targetList.dirName}\\%(title)s.%(ext)s");
-            cmd.Append($" -f best -o \"{outputPath}\"");
+            cmd.Append($"  -o \"{outputPath}\"");
         }
         if(!Directory.Exists(Path.GetDirectoryName(outputPath)))
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
@@ -305,10 +304,10 @@ while (true)
     });
     downloadStart = DateTime.Now;
     process.Start();
-
-
     process.BeginOutputReadLine();
+
     process.WaitForExit();
+    await Task.Delay(3000);
     //這裡不一定match到error
     if (Regex.Matches(cmdOutput.ToString(), "Error").Count == 0
         && Regex.Matches(cmdOutput.ToString(), "error").Count == 0
@@ -324,8 +323,8 @@ while (true)
         if( webDavHandler.isConnection)
         {
             Console.WriteLine("上傳雲端中...");
-            await webDavHandler.uploadFile(Path.GetDirectoryName(outputPath), targetList.listName, downloadStart);
-
+            await webDavHandler.uploadFile(Path.GetDirectoryName(outputPath), targetList.listName, targetList.lastUploadTime);
+            targetList.lastUploadTime = DateTime.Now;
             Console.WriteLine("請輸入這次下載系列的別名:");
             string partialName = Console.ReadLine();
             historyDownload.CreateTime = downloadStart;
@@ -338,6 +337,8 @@ while (true)
         }
         Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
     }
+
+    
     Console.WriteLine("是否繼續?(y/n)");
     if (Console.ReadLine() != "y") break;
 
