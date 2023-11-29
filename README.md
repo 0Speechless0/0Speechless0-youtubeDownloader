@@ -38,7 +38,7 @@
 
 
 影片播放頁面中找到`儲存`並點選，顯示彈跳視窗，可以從視窗中建立新的清單，點選 `建立新的播放清單`
-![Alt text](http://125.229.177.91/index.php/apps/files_sharing/publicpreview/Z2mBsqMHMt3wNFo?file=/&fileId=46005&x=1727&y=971&a=true "a title")
+![Alt text](http://122.117.16.238/index.php/apps/files_sharing/publicpreview/Z2mBsqMHMt3wNFo?file=/&fileId=46005&x=1727&y=971&a=true "a title")
 
 輸入清單名稱，記得設為`公開`
 
