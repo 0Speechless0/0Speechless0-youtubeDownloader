@@ -170,19 +170,22 @@ namespace youtbue下載介面
         }
         public async Task<DataObject> checkOrDownloadTempData()
         {
-            if (tempDataFileResult.StatusCode == 404) return null;
             using (var response = await webDavClient.GetRawFile("data/tempData.bin"))
             {
-                using(var fileStream = File.Create(@".\tempData.bin"))
+                if(response.StatusCode != 404)
                 {
-                    response.Stream.CopyTo(fileStream);
+                    using (var fileStream = File.Create(@".\tempData.bin"))
+                    {
+                        response.Stream.CopyTo(fileStream);
+                    }
                 }
+
             }
-            return Data.ReadFromBinaryFile<DataObject>(".\\tempData.bin") ?? new DataObject();
+            return Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
 
         }
 
-        public async Task<bool> checkAuth()
+        public bool checkAuth()
         {
             return auth;
         }

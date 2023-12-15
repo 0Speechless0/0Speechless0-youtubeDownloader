@@ -30,7 +30,8 @@ ytdlpHandler ytdlpHandler = new ytdlpHandler();
 
 
 string userProfile =  Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-DataObject dataObject;
+DataObject dataObject = new DataObject();
+
 if(!File.Exists(@".\yt-dlp.exe"))
 {
     Console.WriteLine("未發現ytdlp組件，尋找下載...");
@@ -43,14 +44,24 @@ if (!File.Exists(@".\ffmpeg.exe") || !File.Exists(@".\ffplay.exe") || !File.Exis
     await ffmpegHandler.install();
 }
 
-if (File.Exists(@".\tempData.bin"))
+try
 {
-    dataObject = Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
+    if (File.Exists(@".\tempData.bin"))
+    {
+        dataObject = Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
+    }
+    else
+    {
+        Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
+    }
 }
-else
+catch(Exception e)
 {
-    dataObject =new DataObject();
+    File.Delete(@".\tempData.bin");
+    Console.WriteLine("tempData.bin 錯誤，已將其刪除，請重新啟動");
+    return;
 }
+
 
 
 
@@ -94,15 +105,14 @@ try {
             webDavHandler = new webDavHandler(dataObject, "youtubeDownload");
 
 
-            if (await webDavHandler.checkAuth())
-            {
-                dataObject = await webDavHandler.checkOrDownloadTempData();
-                Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
-                break;
-            }
-        }
-    }
 
+        }
+
+    }
+    if (await webDavHandler.checkAuth())
+    {
+        dataObject = await webDavHandler.checkOrDownloadTempData();
+    }
 }
 catch (Exception e){
     Console.WriteLine("無雲端連線建立，使用本地模式");
@@ -118,7 +128,7 @@ while (true)
     if (await webDavHandler.checkAuth())
         Console.WriteLine("功能選擇(請輸入數字1, 2 ,3 ...) : 1.單一下載 2.歌單新曲下載 3.歌單舊曲查詢下載 4.重置程式資料 5. 更新程式");
     else
-        Console.WriteLine("功能選擇(請輸入數字1, 2 ...) : 1.單一下載 2.歌單新曲下載 5. 更新程式");
+        Console.WriteLine("功能選擇(請輸入數字1, 2 ...) : 1.單一下載 2.歌單新曲下載 4.重置程式資料 5. 更新程式");
     if (!Int16.TryParse(Console.ReadLine(), out short route))
     {
         Console.WriteLine("請依上述格式輸入");
@@ -239,6 +249,11 @@ while (true)
         {
             //targetList.lastDownLoadIndex = 0;   
             Console.WriteLine($"此歌單已下載至第{targetList.lastDownLoadIndex}，下載後續新增{itemCount - targetList.lastDownLoadIndex}首...");
+            if(itemCount - targetList.lastDownLoadIndex == 0)
+            {
+                Console.WriteLine("沒有新歌可以下載");
+                continue;
+            }
             cmd.Append($" -I {targetList.lastDownLoadIndex + 1}::1");
 
 
@@ -277,12 +292,12 @@ while (true)
         {
             Console.WriteLine("請輸入格式(best/aac/flac/mp3/m4a/opus/vorbis/wav): \n");
             format = Console.ReadLine();
-            outputPath = Path.Combine(userProfile, $"Music\\{targetList.dirName}\\%(title)s.%(ext)s");
+            outputPath = Path.Combine(userProfile, $"Music\\{targetList.dirName}\\{targetList.dirName}-%(title)s.%(ext)s");
             cmd.Append($" -x --audio-format {format} -o \"{outputPath}\"");
         } 
         if(downloadType.Equals("video"))
         {
-            outputPath = Path.Combine(userProfile, $"Videos\\{targetList.dirName}\\%(title)s.%(ext)s");
+            outputPath = Path.Combine(userProfile, $"Videos\\{targetList.dirName}\\{targetList.dirName}-%(title)s.%(ext)s");
             cmd.Append($"  -o \"{outputPath}\"");
         }
         if(!Directory.Exists(Path.GetDirectoryName(outputPath)))
@@ -331,11 +346,15 @@ while (true)
             historyDownload.Name = partialName;
             targetList.HistoryDownloadList.Add(historyDownload);
 
-
+            Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
             await webDavHandler.updateTempData(@".\tempData.bin");
                
         }
-        Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
+        else
+        {
+            Data.WriteToBinaryFile(@".\tempData.bin", dataObject);
+        }
+
     }
 
     

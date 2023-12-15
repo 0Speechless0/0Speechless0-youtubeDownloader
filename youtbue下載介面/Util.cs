@@ -33,7 +33,7 @@ namespace youtbue下載介面
 
         static string playlistOutput = null;
         static string getPlayListInfo(string listCode) {
-            if (playlistOutput != null) return playlistOutput;
+            //if (playlistOutput != null) return playlistOutput;
             var p = System.Diagnostics.Process.Start(new ProcessStartInfo
             {
                 RedirectStandardOutput = true,
