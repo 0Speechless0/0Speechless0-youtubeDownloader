@@ -85,7 +85,7 @@ try {
     {
 
 
-        if (await webDavHandler.checkAuth()) break;
+        if (webDavHandler.checkAuth()) break;
         else
         {
             if (dataObject.userinfo.account == null)
@@ -109,7 +109,7 @@ try {
         }
 
     }
-    if (await webDavHandler.checkAuth())
+    if (webDavHandler.checkAuth())
     {
         dataObject = await webDavHandler.checkOrDownloadTempData();
     }
@@ -125,7 +125,7 @@ catch (Exception e){
 while (true)
 {
     StringBuilder cmd = new StringBuilder("/C yt-dlp");
-    if (await webDavHandler.checkAuth())
+    if (webDavHandler.checkAuth())
         Console.WriteLine("功能選擇(請輸入數字1, 2 ,3 ...) : 1.單一下載 2.歌單新曲下載 3.歌單舊曲查詢下載 4.重置程式資料 5. 更新程式");
     else
         Console.WriteLine("功能選擇(請輸入數字1, 2 ...) : 1.單一下載 2.歌單新曲下載 4.重置程式資料 5. 更新程式");

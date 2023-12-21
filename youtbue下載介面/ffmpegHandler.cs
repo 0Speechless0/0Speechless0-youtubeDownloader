@@ -16,14 +16,14 @@ namespace youtbue下載介面
         {
             downloadUrl = _url; 
         }
-        public async Task install(string dir = @"ffmpeg-6.0-essentials_build\bin")
+        public async Task install()
         {
             using(var client = new HttpClient())
             {
                 Stream stream = await client.GetStreamAsync(downloadUrl);
                 using (ZipArchive archive = new ZipArchive(stream))
                 {
-                    var targetFiles = archive.Entries.Where(e => Path.GetDirectoryName(e.FullName) == dir && e.Name != "" ).ToList();
+                    var targetFiles = archive.Entries.Where(e => Path.GetDirectoryName(e.FullName).EndsWith("-essentials_build\\bin") && e.Name != "" ).ToList();
                     foreach (ZipArchiveEntry entry in targetFiles)
                     {
                         if(!File.Exists(Path.Combine(@".\", entry.Name))) entry.ExtractToFile(Path.Combine(@".\", entry.Name));
