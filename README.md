@@ -38,19 +38,19 @@
 
 
 影片播放頁面中找到`儲存`並點選，顯示彈跳視窗，可以從視窗中建立新的清單，點選 `建立新的播放清單`
-![Alt text](http://122.117.16.238/index.php/apps/files_sharing/publicpreview/Z2mBsqMHMt3wNFo?file=/&fileId=46005&x=1727&y=971&a=true "a title")
+![downloader1](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/5783b0ab-22d6-4e49-a9be-eabb3f99f57d)
 
 輸入清單名稱，記得設為`公開`
+![downloader3](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/0ffc03b0-8e35-4e9d-ba06-5f7a93b1fbec)
 
-![Alt text](http://125.229.177.91/index.php/apps/files_sharing/publicpreview/33ykEFr5HjdaLMd?file=/&fileId=45917&x=1727&y=971&a=true "a title")
 
 也可選擇已存在的清單加入
+![downloader2](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/43fc5ba5-b14e-4b83-ac84-933f53d8d6c3)
 
-![Alt text](http://125.229.177.91/index.php/apps/files_sharing/publicpreview/yYbGSSpNHiDTWbB?file=/&fileId=45916&x=1727&y=971&a=true "a title")
 
 再來看到左編列表會依清單建立時間由晚到早往下排序，剛剛建立的清單會在最上面，在左列表點選剛剛建立的清單名稱，右側顯示加入清單的影及是否公開，複製此頁瀏覽器上方的連結，用在下載器中下載此清單中的影片，描述畫面如下
+![downloader4_](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/bceac10c-d321-49d2-9f7b-0b9618d9be19)
 
-![Alt text](http://125.229.177.91/index.php/apps/files_sharing/publicpreview/DgxCgbqSMCJsXdk?file=/&fileId=46016&x=1727&y=971&a=true "a title")
 
 ## 重新下載清單影片
 
@@ -73,8 +73,7 @@ tempData是判斷本地模式與線上模式的依據，tempData紀錄雲端的�
 兩者模式的能力區別在能否同步雲端資料
 
 ### 流程圖
-
-![Alt text](http://125.229.177.91/index.php/apps/files_sharing/publicpreview/6F5xYnBEFtakzo2?file=/&fileId=46103&x=2400&y=1350&a=true "a title")
+![ytdownloader-模式設定流程 drawio(1)](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/b45ecf38-594f-4060-8cad-7ad6a67d788b)
 
 
 ## tempData.bin
@@ -86,7 +85,7 @@ tempData是判斷本地模式與線上模式的依據，tempData紀錄雲端的�
 
 ### 流程圖(線上模式)
 
-![Alt text](http://125.229.177.91/index.php/apps/files_sharing/publicpreview/a2DEPcco3asoxiY?file=/&fileId=46118&x=2400&y=1350&a=true "a title")
+![ytdownloader-tempData更新流程 drawio (1)](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/0af2f4b3-c9e8-4fc1-a561-6dbf50d80f83)
 
 如果雲端位置有改變，您必須將原雲端位置上的同步資料夾轉移至新的位置，裡面包含tempData，下載器運行功能(4.)刪除本地tempData後重啟，將會看到雲端位置的詢問，再次設置新的雲端
 
