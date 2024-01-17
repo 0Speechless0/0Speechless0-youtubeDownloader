@@ -38,17 +38,21 @@
 
 
 影片播放頁面中找到`儲存`並點選，顯示彈跳視窗，可以從視窗中建立新的清單，點選 `建立新的播放清單`
+
 ![downloader1](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/5783b0ab-22d6-4e49-a9be-eabb3f99f57d)
 
 輸入清單名稱，記得設為`公開`
+
 ![downloader3](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/0ffc03b0-8e35-4e9d-ba06-5f7a93b1fbec)
 
 
 也可選擇已存在的清單加入
+
 ![downloader2](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/43fc5ba5-b14e-4b83-ac84-933f53d8d6c3)
 
 
 再來看到左編列表會依清單建立時間由晚到早往下排序，剛剛建立的清單會在最上面，在左列表點選剛剛建立的清單名稱，右側顯示加入清單的影及是否公開，複製此頁瀏覽器上方的連結，用在下載器中下載此清單中的影片，描述畫面如下
+
 ![downloader4_](https://github.com/0Speechless0/0Speechless0-youtubeDownloader/assets/36149504/bceac10c-d321-49d2-9f7b-0b9618d9be19)
 
 
