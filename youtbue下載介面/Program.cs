@@ -326,12 +326,12 @@ while (true)
     //這裡不一定match到error
     if (Regex.Matches(cmdOutput.ToString(), "Error").Count == 0
         && Regex.Matches(cmdOutput.ToString(), "error").Count == 0
-        && itemCount - targetList.lastDownLoadIndex > 0)
+        )
     {
         var historyDownload = new HistoryDownload();
         historyDownload.startIndex = targetList.lastDownLoadIndex;
         historyDownload.endIndex = targetList.lastDownLoadIndex + itemCount;
-        targetList.lastDownLoadIndex = targetList.lastDownLoadIndex + itemCount;
+        targetList.lastDownLoadIndex = itemCount;
         targetList.downloadCount++;
 
 
