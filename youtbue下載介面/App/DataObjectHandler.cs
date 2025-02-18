@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-namespace youtbue下載介面
+using youtbue下載介面.Models;
+namespace youtbue下載介面.App
 {
     internal class DataObjectHandler
     {

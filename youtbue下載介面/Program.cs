@@ -6,6 +6,9 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using youtbue下載介面;
+using youtbue下載介面.Models;
+using youtbue下載介面.Clients;
+using youtbue下載介面.App;
 
 string uploadHost = new Config().nextCloudHost;
 string strCmdText;
@@ -32,6 +35,7 @@ ytdlpHandler ytdlpHandler = new ytdlpHandler();
 string userProfile =  Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 DataObject dataObject = new DataObject();
 
+// checker: tool
 if(!File.Exists(@".\yt-dlp.exe"))
 {
     Console.WriteLine("未發現ytdlp組件，尋找下載...");
@@ -62,12 +66,7 @@ catch(Exception e)
     return;
 }
 
-
-
-
-
-
-
+// checker: remote and user
 if (dataObject.nextCloudUrl == null)
 {
 
@@ -120,7 +119,7 @@ catch (Exception e){
 }
 
 
-
+// function switcher
 
 while (true)
 {
@@ -136,11 +135,13 @@ while (true)
     }
     if(route == 0)
     {
+         // 4. 測試 prompt
         Console.WriteLine("請輸入初始化的清單編碼 :");
         string code = Console.ReadLine();
         Test.init(dataObject, code);
         continue;
     }
+    // function 3 : action
     if (route == 3)
     {
         DataObjectHandler dataObjectHandler = new DataObjectHandler(dataObject);
@@ -190,12 +191,14 @@ while (true)
         }
         continue;
     }
+    // function 4 : action
     if (route == 4)
     {
         File.Delete(".\\tempData.bin");
         Console.WriteLine("資料已重置...");
         break;
     }
+    // function 5 : action 
     if (route == 5)
     {
         Console.WriteLine("更新中，請稍後......");
@@ -209,7 +212,7 @@ while (true)
         preProcess.WaitForExit();
         continue;
     }
-
+    // checker :  download url 
     Console.WriteLine("請輸入來自youtube官方的下載連結:");
     url = Console.ReadLine();
     string[] urlArr = url.Split('/');
@@ -234,8 +237,10 @@ while (true)
         }
       
     }
+    // function 2 or 1: action
     if (route == 2)
     {
+        // cmd appender : play list
         if (urlEnd.UrlTypeCheck() != route)
         {
             Console.WriteLine("要下載歌單請確認url 路由為 /playlist    ");
@@ -245,6 +250,8 @@ while (true)
         
         string listCode = urlArg.Length > 0 ? urlArg[0].Split('=')[1] : null ;
         itemCount = listCode.getPlayListItemCount();
+        
+        // checker : play list
         if (dataObject.ListDic.TryGetValue(listCode, out targetList))
         {
             //targetList.lastDownLoadIndex = 0;   
@@ -283,7 +290,7 @@ while (true)
     //    targetList.dirName = Console.ReadLine();
     //}
    
-
+    // cmd appender : outputPath
     Console.WriteLine("請輸入下載格式(video/audio) :");
     string downloadType = Console.ReadLine().downLoadTypeCheck() ;
     if(downloadType.Length > 0)
@@ -303,11 +310,12 @@ while (true)
         if(!Directory.Exists(Path.GetDirectoryName(outputPath)))
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
     }
-
+    // cmd appender : url
     cmd.Append($" {url}");
     Console.WriteLine(cmd.ToString());
     var process = new System.Diagnostics.Process();
     StringBuilder cmdOutput = new StringBuilder();
+    // cmd process 
     process.StartInfo.FileName = "cmd.exe";
     process.StartInfo.RedirectStandardOutput = true;
     process.StartInfo.UseShellExecute = false;
@@ -323,7 +331,10 @@ while (true)
 
     process.WaitForExit();
     await Task.Delay(3000);
-    //這裡不一定match到error
+    //這裡不一定match到error 
+
+    // 5. 上傳 prompt
+    // cmd process  : error handler, success handler
     if (Regex.Matches(cmdOutput.ToString(), "Error").Count == 0
         && Regex.Matches(cmdOutput.ToString(), "error").Count == 0
         )

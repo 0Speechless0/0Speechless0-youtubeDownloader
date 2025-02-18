@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace youtbue下載介面
+namespace youtbue下載介面.Clients
 {
     internal class ytdlpHandler
     {

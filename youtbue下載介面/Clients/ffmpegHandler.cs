@@ -6,8 +6,8 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-
-namespace youtbue下載介面
+using youtbue下載介面.Models;
+namespace youtbue下載介面.Clients
 {
     internal class ffmpegHandler
     {
