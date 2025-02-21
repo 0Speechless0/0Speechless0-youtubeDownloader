@@ -36,17 +36,17 @@ string userProfile =  Environment.GetFolderPath(Environment.SpecialFolder.UserPr
 DataObject dataObject = new DataObject();
 
 // checker: tool
-if(!File.Exists(@".\yt-dlp.exe"))
-{
-    Console.WriteLine("未發現ytdlp組件，尋找下載...");
-    await ytdlpHandler.install();
-}
+// if(!File.Exists(@".\yt-dlp.exe"))
+// {
+//     Console.WriteLine("未發現ytdlp組件，尋找下載...");
+//     await ytdlpHandler.install();
+// }
 
-if (!File.Exists(@".\ffmpeg.exe") || !File.Exists(@".\ffplay.exe") || !File.Exists(@".\ffprobe.exe"))
-{
-    Console.WriteLine("未發現ffmpeg組件，尋找下載...");
-    await ffmpegHandler.install();
-}
+// if (!File.Exists(@".\ffmpeg.exe") || !File.Exists(@".\ffplay.exe") || !File.Exists(@".\ffprobe.exe"))
+// {
+//     Console.WriteLine("未發現ffmpeg組件，尋找下載...");
+//     await ffmpegHandler.install();
+// }
 
 try
 {
@@ -120,9 +120,12 @@ catch (Exception e){
 
 
 // function switcher
-
+var t = new Test();
+// t.TestDownload();
+t.TestPlayListDownload();
 while (true)
 {
+    break;
     StringBuilder cmd = new StringBuilder("/C yt-dlp");
     if (webDavHandler.checkAuth())
         Console.WriteLine("功能選擇(請輸入數字1, 2 ,3 ...) : 1.單一下載 2.歌單新曲下載 3.歌單舊曲查詢下載 4.重置程式資料 5. 更新程式");
@@ -138,7 +141,7 @@ while (true)
          // 4. 測試 prompt
         Console.WriteLine("請輸入初始化的清單編碼 :");
         string code = Console.ReadLine();
-        Test.init(dataObject, code);
+        // Test.init(dataObject, code);
         continue;
     }
     // function 3 : action

@@ -39,5 +39,24 @@ namespace youtbue下載介面.App
         {
             DataObject.ListDic[listCode].lastDownLoadIndex = i;
         }
+
+        public listObject setListObjectByCode(string listCode, string listName)
+        {
+            listObject targetList ;// checker : play list
+            if ( ! DataObject.ListDic.TryGetValue(listCode, out targetList))
+            {
+                targetList = new listObject
+                {
+                    listCode = listCode,
+                    listName = listName
+
+                };
+                DataObject.ListDic.Add(listCode, targetList);
+                targetList.dirName = targetList.listName;
+
+            }
+            return targetList;
+
+        }
     }
 }

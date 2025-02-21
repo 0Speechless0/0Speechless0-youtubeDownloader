@@ -7,16 +7,25 @@ using youtbue下載介面.Models;
 using youtbue下載介面.App;
 namespace youtbue下載介面
 {
-    public static class Test
+    public class Test
     {
-        internal static void init(DataObject data, string code)
+        DataObject dataObject;
+        public Test()
         {
-            var _listName = data.ListDic[code].listName;
-            data.ListDic[code] = new listObject() { 
-                listName = code.getPlayListName()
-            };
-            Data.WriteToBinaryFile(@".\tempData.bin", data);
+            dataObject = Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
 
+        }
+        public void TestDownload()
+        {
+            string url = Console.ReadLine();
+            var test = new DownloadProcess(new CMDAppender(dataObject, url.getUrlArgs()));
+            test.download(url);
+        }
+        public void TestPlayListDownload()
+        {
+            string url = Console.ReadLine();
+            var test = new DownloadProcess(new CMDAppender(dataObject, url.getUrlArgs()));
+            test.downloadPlayList(url);
         }
     }
 }

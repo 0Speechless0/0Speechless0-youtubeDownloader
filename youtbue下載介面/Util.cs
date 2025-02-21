@@ -13,7 +13,17 @@ namespace youtbue下載介面
     {
 
 
-
+        public static string[] getUrlArgs(this string url)
+        {
+            string[] urlArr = url.Split('/');
+            string[] urlMainDiv = (urlArr.Length > 0 ? urlArr[urlArr.Length - 1] : "").Split('?');
+            if(urlMainDiv.Length <2 )
+            {
+                Console.WriteLine("url 不帶參數，無法進行下載");
+                return null;
+            }
+            return urlMainDiv[1].Split('&');
+        }
         public static int getPlayListItemCount(this string listCode)
         {
             string output = getPlayListInfo(listCode);
