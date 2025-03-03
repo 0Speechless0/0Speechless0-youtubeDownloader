@@ -5,7 +5,7 @@ namespace youtbue下載介面.App
 
     internal class CMDAppender
     {
-        DataObjectHandler dataObjectHandler;
+        DataObjectHandler _dataObjectHandler;
         CMDCatcher cMDCatcher;
         string userProfile;
         string cmdOptions = "";
@@ -14,16 +14,23 @@ namespace youtbue下載介面.App
 
         string _url= "";
         listObject appendingListObject;
-        public CMDAppender(DataObject dataObject, string url)
+        public CMDAppender(DataObjectHandler dataObjectHandler)
         {
             _cmd = new StringBuilder("/C yt-dlp");
-            _url = url;
-            string[] urlArg = url.getUrlArgs();
+
             userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            listCode = urlArg.Length > 0 ? urlArg[0].Split('=')[1] : "" ;
-            dataObjectHandler = new DataObjectHandler(dataObject);
-            cMDCatcher = new CMDCatcher(listCode);
+            _dataObjectHandler = dataObjectHandler;
             appendingListObject = new listObject();
+
+        }
+        public void AppendDowndUrl(){
+            Console.WriteLine("請輸入下載連結");
+            _url = Console.ReadLine() ?? "" ;
+            string[] urlArg = _url.getUrlArgs();
+            userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            listCode = urlArg.Length > 0 ? urlArg.FirstOrDefault(r => r.Contains("list=") )?.Split('=')[1] : "" ;
+            cMDCatcher = new CMDCatcher(listCode);
+
         }
         public void AppendOutPutPath()
         {
@@ -67,7 +74,7 @@ namespace youtbue下載介面.App
         public void AppendPlayList()
         {
 
-            appendingListObject = dataObjectHandler.setListObjectByCode(listCode, cMDCatcher.getPlayListName());
+            appendingListObject = _dataObjectHandler.setListObjectByCode(listCode, cMDCatcher.getPlayListName());
             cmdOptions += ! cmdOptions.Contains(" --yes-playlist ") ? " --yes-playlist" : "";
             AppendPlayListRange();
 

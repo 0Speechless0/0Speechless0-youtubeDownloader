@@ -14,10 +14,16 @@ namespace youtbue下載介面.Clients
         private string downloadUrl;
         public ffmpegHandler(string _url= "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip")
         {
+
             downloadUrl = _url; 
         }
-        public async Task install()
+        public async Task installIfNotExist()
         {
+            if (File.Exists(@".\ffmpeg.exe") && File.Exists(@".\ffplay.exe") && File.Exists(@".\ffprobe.exe"))
+            {
+                return ;
+            }
+            Console.WriteLine("未發現ffmpeg，開始下載 .... ");
             using(var client = new HttpClient())
             {
                 Stream stream = await client.GetStreamAsync(downloadUrl);

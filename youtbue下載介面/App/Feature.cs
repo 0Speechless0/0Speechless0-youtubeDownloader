@@ -15,7 +15,10 @@ namespace youtbue下載介面.App
                 try
                 {
                     action?.Invoke();
-                    if ( nextFeature != null) nextFeature.Start();
+                    if ( nextFeature != null) 
+                        nextFeature.Start();
+                    else
+                        return ;
                 }
                 catch (Exception e)
                 {
@@ -23,7 +26,7 @@ namespace youtbue下載介面.App
                     error_action?.Invoke();
                 }
 
-                Console.WriteLine("請問是否重新開始動作？(y/n)");
+                Console.WriteLine("重新開始動作？(y/n)");
                 if( Console.ReadLine() != "y")
                 {
                     break;

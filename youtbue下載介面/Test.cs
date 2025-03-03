@@ -18,14 +18,14 @@ namespace youtbue下載介面
         public void TestDownload()
         {
             string url = Console.ReadLine();
-            var test = new DownloadProcess(new CMDAppender(dataObject, url.getUrlArgs()));
-            test.download(url);
+            var test = new DownloadProcess(new CMDAppender(new DataObjectHandler() ));
+            test.download();
         }
         public void TestPlayListDownload()
         {
             string url = Console.ReadLine();
-            var test = new DownloadProcess(new CMDAppender(dataObject, url.getUrlArgs()));
-            test.downloadPlayList(url);
+            var test = new DownloadProcess(new CMDAppender(new DataObjectHandler() ));
+            test.downloadPlayList();
         }
     }
 }

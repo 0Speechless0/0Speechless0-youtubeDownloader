@@ -4,14 +4,12 @@ namespace youtbue下載介面.App
 
     public class FeatureSwitcher{
 
-        webDavHandler webDavHandler;
 
         bool onlineMode = false;
         Dictionary<int, Feature> featureRouter ; 
         DownloadProcess downloadProcess;
-        internal FeatureSwitcher(webDavHandler webDavHandler, CMDAppender cMDAppender)
+        internal FeatureSwitcher( CMDAppender cMDAppender)
         {
-            onlineMode = webDavHandler.checkAuth();
             featureRouter = new Dictionary<int, Feature>()
             {
                 {0, new Feature() }
@@ -32,7 +30,7 @@ namespace youtbue下載介面.App
                 _ => null
             };
         }
-        public void Run()
+        public void Run(bool onlineMode)
         {
             int route;
             while(true)
@@ -51,8 +49,8 @@ namespace youtbue下載介面.App
 
 
                     }
-                    Console.WriteLine("請問是否繼續？(y/n)");
-                    if( Console.ReadLine() == "y")
+                    Console.WriteLine("繼續？(y/n)");
+                    if( Console.ReadLine() == "n")
                     {
                         break;
                     }

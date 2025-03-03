@@ -31,6 +31,7 @@ namespace youtbue下載介面.App
         public void download()
         {
             _cMDAppender.AppendOutPutPath();
+            _cMDAppender.AppendDowndUrl();
             downloadStart = DateTime.Now;
             process.StartInfo.Arguments = _cMDAppender.GetCMD().ToString();
 

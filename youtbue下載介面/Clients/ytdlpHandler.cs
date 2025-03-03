@@ -16,8 +16,14 @@ namespace youtbue下載介面.Clients
         {
             downloadUrl = _url; 
         }
-        public async Task install()
+        public async Task installIfNotExist()
         {
+
+            if(!File.Exists(@".\yt-dlp.exe"))
+            {
+                return;
+            }
+            Console.WriteLine("未發現yt-dlp ，開始下載 .... ");
             using(var client = new HttpClient())
             {
                 Stream stream = await client.GetStreamAsync(downloadUrl);
