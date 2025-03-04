@@ -18,7 +18,9 @@ namespace youtbue下載介面.App
             process = new Process();
             cmdOutput = new StringBuilder();
             _cMDAppender = cMDAppender;
-            process.StartInfo.FileName = "cmd.exe";
+            process.StartInfo.FileName = 
+            cMDAppender.os == "windows" ? "cmd.exe" : "python3";
+            process.StartInfo.WorkingDirectory = @"./";
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.UseShellExecute = false;
             process.OutputDataReceived += new DataReceivedEventHandler((sender, e) => {

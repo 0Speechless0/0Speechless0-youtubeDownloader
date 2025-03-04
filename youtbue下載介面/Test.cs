@@ -10,21 +10,22 @@ namespace youtbue下載介面
     public class Test
     {
         DataObject dataObject;
-        public Test()
+        string os ;
+        public Test(string _os)
         {
             dataObject = Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
-
+            os = _os;
         }
         public void TestDownload()
         {
             string url = Console.ReadLine();
-            var test = new DownloadProcess(new CMDAppender(new DataObjectHandler() ));
+            var test = new DownloadProcess(new CMDAppender(new DataObjectHandler(), os ));
             test.download();
         }
         public void TestPlayListDownload()
         {
             string url = Console.ReadLine();
-            var test = new DownloadProcess(new CMDAppender(new DataObjectHandler() ));
+            var test = new DownloadProcess(new CMDAppender(new DataObjectHandler(), os ));
             test.downloadPlayList();
         }
     }

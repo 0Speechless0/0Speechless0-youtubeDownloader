@@ -9,6 +9,7 @@ using youtbue下載介面;
 using youtbue下載介面.Models;
 using youtbue下載介面.Clients;
 using youtbue下載介面.App;
+using System.Runtime.InteropServices;
 
 string uploadHost = new Config().nextCloudHost;
 
@@ -20,13 +21,23 @@ string uploadHost = new Config().nextCloudHost;
 Console.Write("-------------歡迎使用youtube網址連結下載工具 ^__^------------ " +
     "\n\n注意:請確保歌單所有歌曲下載可行性\n\n\t\t\t\t\t\t\t\t\t\t\t作者:鄧臣宏(Alex) \n" +
     "------------------------------\n\n");
-
 DataObjectHandler dataObjectHandler = new DataObjectHandler();
+string os= "";
+
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+{
+    await new ytdlpHandler().installIfNotExist("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe");
+    os ="windows";
+}
+else
+{
+    await new ytdlpHandler().installIfNotExist("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp");
+    os="linux";
+}
 
 // await new ffmpegHandler().installIfNotExist();
-// await new ytdlpHandler().installIfNotExist();
+
 
 bool cloudConnected = await dataObjectHandler.willSetCloudUser();
-
-FeatureSwitcher featureSwitcher = new FeatureSwitcher(new CMDAppender(dataObjectHandler) );
+FeatureSwitcher featureSwitcher = new FeatureSwitcher(new CMDAppender(dataObjectHandler, os) );
 featureSwitcher.Run(cloudConnected);

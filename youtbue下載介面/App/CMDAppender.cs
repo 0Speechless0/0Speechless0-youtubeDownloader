@@ -1,5 +1,6 @@
 using System.Text;
 using youtbue下載介面.Models;
+using System.Runtime.InteropServices;
 namespace youtbue下載介面.App
 {
 
@@ -13,11 +14,17 @@ namespace youtbue下載介面.App
         string listCode= "";
 
         string _url= "";
-        listObject appendingListObject;
-        public CMDAppender(DataObjectHandler dataObjectHandler)
-        {
-            _cmd = new StringBuilder("/C yt-dlp");
 
+        public string os {get;set;}
+        listObject appendingListObject;
+        public CMDAppender(DataObjectHandler dataObjectHandler, string _os)
+        {
+            os =_os;
+            _cmd = os switch {
+                "windows" => new StringBuilder("/C yt-dlp"),
+                "linux" =>  new StringBuilder("yt-dlp"),
+                _ => new StringBuilder()
+            };
             userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             _dataObjectHandler = dataObjectHandler;
             appendingListObject = new listObject();
