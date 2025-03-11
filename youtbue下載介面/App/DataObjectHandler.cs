@@ -5,20 +5,23 @@ using System.Text;
 using System.Threading.Tasks;
 using youtbue下載介面.Clients;
 using youtbue下載介面.Models;
+using  youtbue下載介面.Interface;
+using System.Reflection.Metadata;
 namespace youtbue下載介面.App
 {
     internal class DataObjectHandler
     {
         DataObject DataObject { get; set; }
-        webDavHandler webDavHandler;
+        CloudHander  _cloudHander;
         public KeyValuePair<string, listObject>[] ListObjectArr { get; }
 
-        public DataObjectHandler()
+        public DataObjectHandler(Func<CloudHander> createCloudHander)
         {
             if (File.Exists(@".\tempData.bin"))
             {
                 DataObject = Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
-                webDavHandler = new webDavHandler(DataObject, "youtubeDownload");
+                // webDavHandler = new webDavHandler(DataObject, "youtubeDownload");
+                _cloudHander = createCloudHander.Invoke();
             }
             else
             {
@@ -48,12 +51,12 @@ namespace youtbue下載介面.App
                 return false;
             Console.WriteLine("資料檢查中，請稍後...");
             try { 
-                bool authCheck = false;
-                while (!authCheck)
+                do
                 {
-
-
-                    if (webDavHandler != null && webDavHandler.checkAuth()) break;
+                    if (_cloudHander.login(DataObject) ) {
+                        DataObject = await _cloudHander.checkOrDownloadTempData();
+                        break;
+                    }
                     else
                     {
                         if (DataObject.userinfo.account == null)
@@ -69,20 +72,10 @@ namespace youtbue下載介面.App
                         Console.WriteLine("請輸入密碼:");
                         DataObject.userinfo.password = Console.ReadLine();
                         Console.WriteLine();
-                        Console.WriteLine("請稍後...");
-                        webDavHandler = new webDavHandler(DataObject, "youtubeDownload");
-
-                    }
-                    if(webDavHandler == null)
-                    {
-                        webDavHandler = new webDavHandler(DataObject, "youtubeDownload");
+                        Console.WriteLine("請稍後...");                         
                     }
 
-                }
-                if (webDavHandler.checkAuth())
-                {
-                    DataObject = await webDavHandler.checkOrDownloadTempData();
-                }
+                }while(true);
             }
             catch (Exception e){
                 Console.WriteLine("無雲端連線建立，使用本地模式");

@@ -46,6 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MegaApiClient" Version="1.10.4" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="PanoramicData.ConsoleExtensions" Version="1.0.12" />

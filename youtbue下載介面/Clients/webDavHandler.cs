@@ -13,9 +13,10 @@ using static System.Net.WebRequestMethods;
 using File = System.IO.File;
 using youtbue下載介面.Models;
 using youtbue下載介面.App;
+using youtbue下載介面.Interface;
 namespace youtbue下載介面.Clients
 {
-    internal class webDavHandler
+    internal class webDavHandler : CloudHander
     {
         private bool auth = false;
         private WebDavClient webDavClient;
@@ -36,6 +37,8 @@ namespace youtbue下載介面.Clients
         };
         private string videoDir;
         private string audioDir;
+
+        private string rootDir;
         public bool isConnection { get; set; } = false;
 
         //private bool startUpload;
@@ -46,42 +49,39 @@ namespace youtbue下載介面.Clients
             isConnection = false;
 
         }
-        public webDavHandler(DataObject data, string dir = "")
+        public webDavHandler(string dir = "")
         {
-            UserInfo userInfo = data.userinfo;
+            rootDir = dir;
             var userProfileDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             audioDir = Path.Combine(userProfileDir, "Music");
             videoDir = Path.Combine(userProfileDir, "Videos");
+        }
 
-            var baseUrl = $"{data.nextCloudUrl}/remote.php/dav/files/{userInfo.account}/{dir}/";
-
+        public bool login(DataObject dataObject)
+        {
+            var u = dataObject.userinfo;
+            var baseUrl = $"{dataObject.nextCloudUrl}/remote.php/dav/files/{u.account}/{rootDir}/";
             webDavClient = new WebDavClient(new WebDavClientParams
             {
                 BaseAddress = new Uri(baseUrl),
-                Credentials = new NetworkCredential(userInfo.account, userInfo.password)
+                Credentials = new NetworkCredential(u.account, u.password)
             });
             tempDataFileResult = webDavClient.Propfind("data", propfindParamters).Result;
             
             if(tempDataFileResult.StatusCode == 404)
             {
-                webDavClient.Mkcol($"../{dir}");
+                webDavClient.Mkcol($"../{rootDir}");
                 webDavClient.Mkcol($"data");
 
             }
             if(tempDataFileResult.StatusCode != 401)
             {
-                auth = true;
+                return true;
             }
             isConnection = true;
-
-
-
-        }
-        ~webDavHandler() { 
-        
             webDavClient.Dispose();
+            return false;
         }
-
         public  async Task<bool>  updateOrCreateTempData()
         {
 
