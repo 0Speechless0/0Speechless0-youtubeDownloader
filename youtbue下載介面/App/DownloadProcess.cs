@@ -1,5 +1,5 @@
 using System.Diagnostics;
-
+using System.Runtime.CompilerServices;
 using System.Text;
 using youtbue下載介面.Models;
 
@@ -15,11 +15,15 @@ namespace youtbue下載介面.App
         DateTime downloadStart;
         internal DownloadProcess(CMDAppender cMDAppender)
         {
-            process = new Process();
             cmdOutput = new StringBuilder();
             _cMDAppender = cMDAppender;
+            createProcess();
+        }
+        private void createProcess()
+        {
+            process = new Process();
             process.StartInfo.FileName = 
-            cMDAppender.os == "windows" ? "cmd.exe" : "python3";
+            _cMDAppender.os == "windows" ? "cmd.exe" : "python3";
             process.StartInfo.WorkingDirectory = @"./";
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.UseShellExecute = false;
@@ -29,7 +33,6 @@ namespace youtbue下載介面.App
 
             });
         }
-
         public void download()
         {
             _cMDAppender.AppendOutPutPath();
@@ -41,6 +44,8 @@ namespace youtbue下載介面.App
             process.Start();
             process.BeginOutputReadLine();
             process.WaitForExit();
+            process.Dispose();
+            createProcess();
         }
         public void downloadPlayList()
         {

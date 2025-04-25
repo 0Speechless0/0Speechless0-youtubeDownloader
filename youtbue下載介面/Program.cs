@@ -39,8 +39,8 @@ else
 // await new ffmpegHandler().installIfNotExist();
 
 var client = new MegaApiClient();
-client.Login("kbb37038106@gmail.com", "a314622581246");
-INode root = client.GetNodes().Single(n => n.Type == NodeType.Root);
+// client.Login("email", "passowrd");
+// INode root = client.GetNodes().Single(n => n.Type == NodeType.Root);
 bool cloudConnected = await dataObjectHandler.willSetCloudUser();
 FeatureSwitcher featureSwitcher = new FeatureSwitcher(new CMDAppender(dataObjectHandler, os) );
 featureSwitcher.Run(cloudConnected);
