@@ -8,7 +8,6 @@ namespace youtbue下載介面.App
 
     public class DownloadProcess
     {
-        Process process ;
         StringBuilder cmdOutput;
 
         CMDAppender _cMDAppender;
@@ -17,11 +16,10 @@ namespace youtbue下載介面.App
         {
             cmdOutput = new StringBuilder();
             _cMDAppender = cMDAppender;
-            createProcess();
         }
-        private void createProcess()
+        private void run(string arguments)
         {
-            process = new Process();
+            Process process = new Process();
             process.StartInfo.FileName = 
             _cMDAppender.os == "windows" ? "cmd.exe" : "python3";
             process.StartInfo.WorkingDirectory = @"./";
@@ -32,25 +30,31 @@ namespace youtbue下載介面.App
                 Console.WriteLine(e.Data);
 
             });
-        }
-        public void download()
-        {
-            _cMDAppender.AppendOutPutPath();
-            _cMDAppender.AppendDowndUrl();
             downloadStart = DateTime.Now;
-            process.StartInfo.Arguments = _cMDAppender.GetCMD().ToString();
-
+            process.StartInfo.Arguments = arguments;
             Console.WriteLine($"開始執行: , {process.StartInfo.Arguments}");
             process.Start();
             process.BeginOutputReadLine();
             process.WaitForExit();
             process.Dispose();
-            createProcess();
+        }
+        public void download()
+        {
+            _cMDAppender.AppendOutPutPath();
+            _cMDAppender.AppendDowndUrl();
+            run(_cMDAppender.GetCMD().ToString()) ;
+
         }
         public void downloadPlayList()
         {
             _cMDAppender.AppendPlayList();
             download();
+        }
+
+        public void update()
+        {
+            _cMDAppender.Append("--update-to master");
+            run(_cMDAppender.GetCMD().ToString());
         }
     }
 }
