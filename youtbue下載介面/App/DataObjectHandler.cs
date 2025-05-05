@@ -45,7 +45,7 @@ namespace youtbue下載介面.App
         }
         public async Task<bool> willSetCloudUser()
         {
-            if(DataObject.nextCloudUrl == null)
+            if(_cloudHander.hasRemoteUrl  && DataObject.nextCloudUrl == null)
                 willCloudSet();
             if(DataObject.nextCloudUrl == "")
                 return false;
@@ -61,7 +61,7 @@ namespace youtbue下載介面.App
                     {
                         if (DataObject.userinfo.account == null)
                         {
-                            Console.WriteLine("nextCloud 資料上傳使用者未設置，請先設置");
+                            Console.WriteLine("資料上傳使用者未設置，請先設置");
                         }
                         else
                         {
@@ -123,6 +123,15 @@ namespace youtbue下載介面.App
             }
             return targetList;
 
+        }
+        public void writeToBin(DataObject? dataObject = null)
+        {
+            Data.WriteToBinaryFile<DataObject>(@".\tempData.bin",  dataObject ?? DataObject);
+        }
+        public void resetBin()
+        {
+            DataObject = new DataObject();
+            Data.WriteToBinaryFile<DataObject>(@".\tempData.bin",  DataObject);
         }
     }
 }

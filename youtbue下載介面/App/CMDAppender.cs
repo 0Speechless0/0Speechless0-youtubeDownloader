@@ -86,6 +86,11 @@ namespace youtbue下載介面.App
             AppendPlayListRange();
 
         }
+
+        public void Append(string str)
+        {
+            cmdOptions += $" {str}"; 
+        }
         public StringBuilder GetCMD()
         {
             _cmd.Append($" {cmdOptions}");
