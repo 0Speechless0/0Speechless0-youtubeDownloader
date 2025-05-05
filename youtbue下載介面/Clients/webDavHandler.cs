@@ -19,6 +19,7 @@ namespace youtbue下載介面.Clients
     internal class webDavHandler : CloudHander
     {
         private bool auth = false;
+        public bool hasRemoteUrl  {get;} = true;
         private WebDavClient webDavClient;
         PropfindResponse tempDataFileResult;
         PropfindParameters propfindParamters = new PropfindParameters
@@ -40,6 +41,7 @@ namespace youtbue下載介面.Clients
 
         private string rootDir;
         public bool isConnection { get; set; } = false;
+
 
         //private bool startUpload;
         //public Queue<string> uploadFileQueue = new Queue<string>();

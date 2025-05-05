@@ -22,7 +22,8 @@ string uploadHost = new Config().nextCloudHost;
 Console.Write("-------------歡迎使用youtube網址連結下載工具 ^__^------------ " +
     "\n\n注意:請確保歌單所有歌曲下載可行性\n\n\t\t\t\t\t\t\t\t\t\t\t作者:鄧臣宏(Alex) \n" +
     "------------------------------\n\n");
-DataObjectHandler dataObjectHandler = new DataObjectHandler(() => new webDavHandler("youtubeDownload") );
+DataObjectHandler dataObjectHandler = new DataObjectHandler(() => new webDavHandler("youtubeDownloader"));
+// DataObjectHandler dataObjectHandler = new DataObjectHandler(() => new megaClientHandler("youtubeDownloader") );
 string os= "";
 
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -38,9 +39,7 @@ else
 
 // await new ffmpegHandler().installIfNotExist();
 
-var client = new MegaApiClient();
-// client.Login("email", "passowrd");
-// INode root = client.GetNodes().Single(n => n.Type == NodeType.Root);
+
 bool cloudConnected = await dataObjectHandler.willSetCloudUser();
-FeatureSwitcher featureSwitcher = new FeatureSwitcher(new CMDAppender(dataObjectHandler, os) );
+FeatureSwitcher featureSwitcher = new FeatureSwitcher(new CMDAppender(dataObjectHandler, os),  dataObjectHandler);
 featureSwitcher.Run(cloudConnected);

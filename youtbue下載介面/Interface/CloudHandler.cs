@@ -5,6 +5,8 @@ namespace youtbue下載介面.Interface
     internal interface CloudHander
     {
         bool isConnection{get;set;}
+        bool hasRemoteUrl { get; }
+
         Task<DataObject> checkOrDownloadTempData();
         bool login(DataObject dataObject);
         Task uploadFile(string? dir, string dirName, DateTime? beginTime);
