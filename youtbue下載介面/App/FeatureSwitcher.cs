@@ -1,4 +1,5 @@
 using youtbue下載介面.Clients;
+using youtbue下載介面.Models;
 namespace youtbue下載介面.App
 {
 
@@ -7,14 +8,12 @@ namespace youtbue下載介面.App
 
         bool onlineMode = false;
         Dictionary<int, Feature> featureRouter ; 
-        DownloadProcess downloadProcess;
-        internal FeatureSwitcher( CMDAppender cMDAppender)
+        DownloadProcess _downloadProcess;
+        DataObjectHandler _dataObjectHandler;
+        internal FeatureSwitcher(CMDAppender cMDAppender, DataObjectHandler  dataObjectHandler)
         {
-            featureRouter = new Dictionary<int, Feature>()
-            {
-                {0, new Feature() }
-            };
-            downloadProcess = new DownloadProcess(cMDAppender);
+            _downloadProcess = new DownloadProcess(cMDAppender);
+            _dataObjectHandler = dataObjectHandler;
         }
         private Feature? GetCurrentFeature(int route)
         {
@@ -22,10 +21,17 @@ namespace youtbue下載介面.App
             return route switch 
             {
                 1 => new Feature{
-                   action = downloadProcess.download
+                   action = _downloadProcess.download
                 },
                 2 => new Feature{
-                   action = downloadProcess.downloadPlayList
+                   action = _downloadProcess.downloadPlayList
+                },
+                4 => new Feature{
+                   action = _dataObjectHandler.resetBin,
+                   successMessage = "資料重製成功"
+                },
+                5 => new Feature{
+                   action = _downloadProcess.update
                 },
                 _ => null
             };
@@ -43,11 +49,12 @@ namespace youtbue下載介面.App
                 {
                     try{
                         GetCurrentFeature(route)?.Start(); 
+                        _dataObjectHandler.writeToBin();
                     }
                     catch(Exception e)
                     {
 
-
+                        
                     }
                     Console.WriteLine("繼續？(y/n)");
                     if( Console.ReadLine() == "n")
