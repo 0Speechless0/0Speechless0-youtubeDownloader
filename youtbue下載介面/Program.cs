@@ -37,7 +37,7 @@ else
     os="linux";
 }
 
-// await new ffmpegHandler().installIfNotExist();
+await new ffmpegHandler().installIfNotExist();
 
 
 bool cloudConnected = await dataObjectHandler.willSetCloudUser();

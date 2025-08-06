@@ -21,12 +21,13 @@ namespace youtbue下載介面.App
             {
                 DataObject = Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
                 // webDavHandler = new webDavHandler(DataObject, "youtubeDownload");
-                _cloudHander = createCloudHander.Invoke();
+
             }
             else
             {
                 DataObject = new DataObject();
             }
+            _cloudHander = createCloudHander.Invoke();
             ListObjectArr = DataObject.ListDic.ToArray();
         }
         public void willCloudSet()
