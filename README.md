@@ -98,3 +98,11 @@ tempData是判斷本地模式與線上模式的依據，tempData紀錄雲端的�
 所需的組件會在程式啟動後檢查檔案若不存在後安裝，若下載器無法正常運行，嘗試使用功能(5.)，或嘗試自行安裝組件放置於編譯檔目錄中
 1. yt-dlp : https://github.com/yt-dlp/yt-dlp
 2. ffmpeg  for win 7 above : https://www.gyan.dev/ffmpeg/builds/
+
+
+## ubuntu 上執行專案
+
+```code
+cd youtbue下載介面
+dotnet run
+```

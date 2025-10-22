@@ -11,55 +11,63 @@ namespace youtbue下載介面.App
 {
     internal class DataObjectHandler
     {
-        DataObject DataObject { get; set; }
-        CloudHander  _cloudHander;
-        public KeyValuePair<string, listObject>[] ListObjectArr { get; }
+        DataObject _dataObject { get; set; }
+        CloudHander? _cloudHander = null;
 
-        public DataObjectHandler(Func<CloudHander> createCloudHander)
+        public KeyValuePair<string, listObject>[] ListObjectArr { get; }    
+
+        public bool cloudConnected {get;set;}
+        public DataObjectHandler(Func<DataObject, CloudHander> createCloudHander)
         {
-            if (File.Exists(@".\tempData.bin"))
+            string tempDataPath = Path.Combine(".", "tempData.bin");
+            if (File.Exists(tempDataPath))
             {
-                DataObject = Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
+                _dataObject = Data.ReadFromBinaryFile<DataObject>(tempDataPath) ?? new DataObject();
                 // webDavHandler = new webDavHandler(DataObject, "youtubeDownload");
-                _cloudHander = createCloudHander.Invoke();
+
             }
             else
             {
-                DataObject = new DataObject();
+                _dataObject = new DataObject();
             }
-            ListObjectArr = DataObject.ListDic.ToArray();
+            ListObjectArr = _dataObject.ListDic.ToArray();
+            _cloudHander = createCloudHander.Invoke(_dataObject);
+            willSetCloudUser();
         }
         public void willCloudSet()
         {
                         // checker: remote and user
-            if (DataObject.nextCloudUrl == null)
+            if (_dataObject.nextCloudUrl == null)
             {
 
                 Console.WriteLine("nextCloud 資料上傳服務未設置，按enter 跳過，否則請先設置，輸入雲端位置(http(s)://...):");
-                DataObject.nextCloudUrl = Console.ReadLine();
+                _dataObject.nextCloudUrl = Console.ReadLine();
             }
             else
             {
                  Console.WriteLine("無雲端連線建立，使用本地模式");
             }
         }
-        public async Task<bool> willSetCloudUser()
+        private async Task willSetCloudUser()
         {
-            if(_cloudHander.hasRemoteUrl  && DataObject.nextCloudUrl == null)
+            if(_dataObject.nextCloudUrl == null)
                 willCloudSet();
-            if(DataObject.nextCloudUrl == "")
-                return false;
+            if(_dataObject.nextCloudUrl == "")
+                cloudConnected =  false;
             Console.WriteLine("資料檢查中，請稍後...");
             try { 
                 do
                 {
-                    if (_cloudHander.login(DataObject) ) {
-                        DataObject = await _cloudHander.checkOrDownloadTempData();
+
+                    await _cloudHander.login();
+                    if (_dataObject.userinfo.account != null && _cloudHander.isConnection)
+                    {
+                        _dataObject = await _cloudHander.pullRemoteData(_dataObject);
                         break;
                     }
                     else
                     {
-                        if (DataObject.userinfo.account == null)
+                        if (_dataObject.userinfo.account == null)
                         {
                             Console.WriteLine("資料上傳使用者未設置，請先設置");
                         }
@@ -68,25 +76,25 @@ namespace youtbue下載介面.App
                             Console.WriteLine("輸入帳號認證失敗，請重新輸入");
                         }
                         Console.WriteLine("輸入帳號:");
-                        DataObject.userinfo.account = Console.ReadLine();
+                        _dataObject.userinfo.account = Console.ReadLine();
                         Console.WriteLine("請輸入密碼:");
-                        DataObject.userinfo.password = Console.ReadLine();
+                        _dataObject.userinfo.password = Console.ReadLine();
                         Console.WriteLine();
-                        Console.WriteLine("請稍後...");                         
+                        Console.WriteLine("請稍後...");
                     }
 
                 }while(true);
             }
             catch (Exception e){
                 Console.WriteLine("無雲端連線建立，使用本地模式");
-                return false;
+                cloudConnected =  false;
             }
-            return true;
+            cloudConnected = true;
         }
         public List<string> showListName()
         {
             int i = 0;
-            return DataObject.ListDic.Select(row => $"({++i})[{row.Value.listName}]").ToList();
+            return _dataObject.ListDic.Select(row => $"({++i})[{row.Value.listName}]").ToList();
         }
 
         public listObject GetListObject(int index)
@@ -103,13 +111,13 @@ namespace youtbue下載介面.App
 
         public void updateDownloadIndex(string listCode, int i)
         {
-            DataObject.ListDic[listCode].lastDownLoadIndex = i;
+            _dataObject.ListDic[listCode].lastDownLoadIndex = i;
         }
 
         public listObject setListObjectByCode(string listCode, string listName)
         {
             listObject targetList ;// checker : play list
-            if ( ! DataObject.ListDic.TryGetValue(listCode, out targetList))
+            if ( ! _dataObject.ListDic.TryGetValue(listCode, out targetList))
             {
                 targetList = new listObject
                 {
@@ -117,7 +125,7 @@ namespace youtbue下載介面.App
                     listName = listName
 
                 };
-                DataObject.ListDic.Add(listCode, targetList);
+                _dataObject.ListDic.Add(listCode, targetList);
                 targetList.dirName = targetList.listName;
 
             }
@@ -126,12 +134,12 @@ namespace youtbue下載介面.App
         }
         public void writeToBin(DataObject? dataObject = null)
         {
-            Data.WriteToBinaryFile<DataObject>(@".\tempData.bin",  dataObject ?? DataObject);
+            Data.WriteToBinaryFile<DataObject>(@".\tempData.bin",  dataObject ?? _dataObject);
         }
         public void resetBin()
         {
-            DataObject = new DataObject();
-            Data.WriteToBinaryFile<DataObject>(@".\tempData.bin",  DataObject);
+            _dataObject = new DataObject();
+            Data.WriteToBinaryFile<DataObject>(@".\tempData.bin",  _dataObject);
         }
     }
 }

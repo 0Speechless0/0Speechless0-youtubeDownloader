@@ -14,6 +14,9 @@ using File = System.IO.File;
 using youtbue下載介面.Models;
 using youtbue下載介面.App;
 using youtbue下載介面.Interface;
+using System.Net.Http.Headers;
+// 全域忽略 SSL 驗證
+
 namespace youtbue下載介面.Clients
 {
     internal class webDavHandler : CloudHander
@@ -21,6 +24,8 @@ namespace youtbue下載介面.Clients
         private bool auth = false;
         public bool hasRemoteUrl  {get;} = true;
         private WebDavClient webDavClient;
+
+        DataObject _dataObject;
         PropfindResponse tempDataFileResult;
         PropfindParameters propfindParamters = new PropfindParameters
         {
@@ -51,36 +56,55 @@ namespace youtbue下載介面.Clients
             isConnection = false;
 
         }
-        public webDavHandler(string dir = "")
+        public webDavHandler(DataObject dataObject, string dir = "")
         {
-            rootDir = dir;
+            rootDir = $"/{dir}";
             var userProfileDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             audioDir = Path.Combine(userProfileDir, "Music");
             videoDir = Path.Combine(userProfileDir, "Videos");
+            _dataObject = dataObject;
         }
 
-        public bool login(DataObject dataObject)
+        async public Task<bool> login()
         {
-            var u = dataObject.userinfo;
-            var baseUrl = $"{dataObject.nextCloudUrl}/remote.php/dav/files/{u.account}/{rootDir}/";
-            webDavClient = new WebDavClient(new WebDavClientParams
+            var u = _dataObject?.userinfo;
+            var accountDir = u.account == null ? "" : $"/{u.account}";
+            var baseUrl = $"{_dataObject?.nextCloudUrl}/remote.php/dav/files{accountDir}{rootDir}/";
+            // 1) 建立 HttpClientHandler，跳過憑證驗證（測試用）
+            var handler = new HttpClientHandler
             {
-                BaseAddress = new Uri(baseUrl),
+                // 這裡直接回傳 true，略過憑證驗證（含名稱與鏈）
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true,
+
+                // 可把 Credentials 放在 handler 上（若伺服器使用 Windows auth / NTLM）
                 Credentials = new NetworkCredential(u.account, u.password)
-            });
+            };
+
+            // 2) 建立 HttpClient，並設定 BaseAddress
+            var httpClient = new HttpClient(handler)
+            {
+                BaseAddress = new Uri(baseUrl)
+            };
+
+            // 3) 如果 WebDAV 伺服器用 Basic Auth，預先送出 Authorization header（可避免 401 再挑戰）
+            var basicToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{u.account}:{u.password}"));
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicToken);
+
+            webDavClient = new WebDavClient(httpClient);
             tempDataFileResult = webDavClient.Propfind("data", propfindParamters).Result;
             
             if(tempDataFileResult.StatusCode == 404)
             {
-                webDavClient.Mkcol($"../{rootDir}");
+                webDavClient.Mkcol($"..{rootDir}");
                 webDavClient.Mkcol($"data");
 
             }
             if(tempDataFileResult.StatusCode != 401)
             {
+                isConnection = true;
                 return true;
             }
-            isConnection = true;
+            isConnection = false;
             webDavClient.Dispose();
             return false;
         }
@@ -108,6 +132,7 @@ namespace youtbue下載介面.Clients
         {
             var uploadResult = await webDavClient.PutFile("data/tempData.bin", File.OpenRead(path));
         }
+
 
         //public void insertNewestFileToQueue(string? dir)
         //{
@@ -171,20 +196,28 @@ namespace youtbue下載介面.Clients
             }
 
         }
-        public async Task<DataObject> checkOrDownloadTempData()
+        public async Task<DataObject> pullRemoteData(DataObject dataObject)
         {
+            string tempDataPath = Path.Combine(".", "tempData.bin");
             using (var response = await webDavClient.GetRawFile("data/tempData.bin"))
             {
-                if(response.StatusCode != 404)
+                if (response.StatusCode == 404)
                 {
-                    using (var fileStream = File.Create(@".\tempData.bin"))
+                    Data.WriteToBinaryFile<DataObject>(tempDataPath, dataObject);
+                    await webDavClient.PutFile("data/tempData.bin", File.OpenRead(tempDataPath));                    
+                    return dataObject;
+                }
+                else
+                {
+                    using (var fileStream = File.Create(tempDataPath))
                     {
                         response.Stream.CopyTo(fileStream);
                     }
                 }
 
+
             }
-            return Data.ReadFromBinaryFile<DataObject>(@".\tempData.bin") ?? new DataObject();
+            return Data.ReadFromBinaryFile<DataObject>(tempDataPath) ;
 
         }
 

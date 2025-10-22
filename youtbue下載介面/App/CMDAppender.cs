@@ -49,17 +49,22 @@ namespace youtbue下載介面.App
                 throw new Exception("無法辨識你輸入的格式");
             else
             {
+                outputPath = Path.Combine(
+                    userProfile,
+                    downloadType.Equals("audio") ? "Music" : "Video",
+                    $"{appendingListObject.dirName ?? "Default" }",
+                    $"%(title)s.%(ext)s"
+                );
+
                 if (downloadType.Equals("audio"))
                 {
                     Console.WriteLine("請輸入格式(best/aac/flac/mp3/m4a/opus/vorbis/wav): \n");
                     format = Console.ReadLine();
                     if( format.Length == 0) throw new Exception("");
-                    outputPath = Path.Combine(userProfile, $"Music\\{appendingListObject.dirName}\\{appendingListObject.dirName}-%(title)s.%(ext)s");
                     cmdOptions += ! cmdOptions.Contains(" -x --audio-format ") ? $" -x --audio-format {format} -o \"{outputPath}\"" : "";
                 } 
                 if(downloadType.Equals("video"))
                 {
-                    outputPath = Path.Combine(userProfile, $"Videos\\{appendingListObject.dirName}\\{appendingListObject.dirName}-%(title)s.%(ext)s");
                     cmdOptions += ! cmdOptions.Contains(" -o ") ? "  -o \"{outputPath}\"" : "";
                 }
                 if(!Directory.Exists(Path.GetDirectoryName(outputPath)))

@@ -17,9 +17,18 @@ namespace youtbue下載介面
                 .AddJsonFile("appsettings.json")
                 .Build();
         }
-        public string nextCloudHost {
-            get {
+        public string nextCloudHost
+        {
+            get
+            {
                 return config["nextCloudHost"].ToString();
+            }
+        }
+        public bool sslVerify
+        {
+            get
+            {
+                return config["sslVerify"] != "false";
             }
         }
     }
