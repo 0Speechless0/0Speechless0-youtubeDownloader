@@ -41,7 +41,7 @@ else
     os="linux";
 }
 
-// await new ffmpegHandler().installIfNotExist();
+await new ffmpegHandler().installIfNotExist();
 
 
 FeatureSwitcher featureSwitcher = new FeatureSwitcher(new CMDAppender(dataObjectHandler, os),  dataObjectHandler);
