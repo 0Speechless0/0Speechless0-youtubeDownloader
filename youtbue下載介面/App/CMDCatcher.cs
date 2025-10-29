@@ -1,37 +1,47 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using youtbue下載介面.Models;
 
 namespace youtbue下載介面.App
 {
 
-    public class CMDCatcher{
+    internal class CMDCatcher{
         ProcessStartInfo processInfo;
-        string _listCode;
-        public CMDCatcher(string listCode)
+        CMDAppender _cMDAppender;
+
+        public CMDCatcher(CMDAppender cMDAppender)
         {
-            processInfo = new ProcessStartInfo
-            {
-                RedirectStandardOutput = true,
-                FileName = "cmd.exe",
-            };
-            _listCode = listCode;
+            _cMDAppender = cMDAppender;
         }
-        private string getPlayListInfo()
+        public string[] getSongsInPlayList(string listCode)
         {
             //if (playlistOutput != null) return playlistOutput;
-            processInfo.Arguments =  $"/C yt-dlp --flat-playlist https://www.youtube.com/playlist?list={_listCode}";
+            _cMDAppender.Append($" --flat-playlist \"%(title)s\"   https://www.youtube.com/playlist?list={listCode}");
+            return _cMDAppender.run().Split("\n");
 
-            Process process = Process.Start(processInfo);
-            return process.StandardOutput.ReadToEnd();
         }
-        public int getPlayListItemCount() {
-            string processOutput = getPlayListInfo();
-            return Regex.Matches(processOutput, @"\[download\] Downloading item").Count;
-        }
-        public string getPlayListName()
+        public int getPlayListItemCount(string listCode)
         {
-            string processOutput = getPlayListInfo();
-            return processOutput.Split("[download] Finished downloading playlist: ")[1].Trim();
+            string[] songsList = getSongsInPlayList(listCode);
+            return songsList.Length;
+        }
+        
+        public string getPlayListName(string listCode)
+        {
+            _cMDAppender.Append($" --quiet --no-error --print \"%(playlist_title)s\" https://www.youtube.com/playlist?list={listCode}"); 
+            return _cMDAppender.run().Split("\n").Last();
+        }
+        public listObject[] getPlayListObjects(string userName)
+        {
+            _cMDAppender.Append($" --flat-playlist --print \"%(title)s|&|%(id)s\" https://www.youtube.com/@{userName}/playlists");
+            string[] lists =  _cMDAppender.run().Split("\n");
+            return lists
+            .Select(e => e.Split("|&|") )
+            .Select( e =>
+            new listObject{
+                dirName = e[0],
+                listCode = e[1]
+            }).ToArray<listObject>();
         }
     }
 }

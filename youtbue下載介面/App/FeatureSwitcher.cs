@@ -9,29 +9,52 @@ namespace youtbue下載介面.App
         bool onlineMode = false;
         Dictionary<int, Feature> featureRouter ; 
         DownloadProcess _downloadProcess;
+        SyncProcess _syncProcess;
         DataObjectHandler _dataObjectHandler;
-        internal FeatureSwitcher(CMDAppender cMDAppender, DataObjectHandler  dataObjectHandler)
+        internal FeatureSwitcher(OS os, string filePath, DataObjectHandler  dataObjectHandler)
         {
-            _downloadProcess = new DownloadProcess(cMDAppender);
+
+            _downloadProcess    = new DownloadProcess(new CMDAppender(dataObjectHandler, os, filePath));
+            _syncProcess        = new SyncProcess(dataObjectHandler, filePath);
             _dataObjectHandler = dataObjectHandler;
         }
         private Feature? GetCurrentFeature(int route)
         {
-            
-            return route switch 
+
+            return route switch
             {
-                1 => new Feature{
-                   action = _downloadProcess.download
+                1 => new Feature
+                {
+                    name = "單一下載",
+                    action = _downloadProcess.downloadOne,
                 },
-                2 => new Feature{
-                   action = _downloadProcess.downloadPlayList
+                2 => new Feature
+                {
+                    name = "曲單下載",
+                    action = _downloadProcess.downloadPlayList
                 },
-                4 => new Feature{
-                   action = _dataObjectHandler.resetBin,
-                   successMessage = "資料重製成功"
+                3 => new Feature
+                {
+                    name = "資料夾雲端上傳",
+                    action = _syncProcess.push,
+                    withCloud = true,
                 },
-                5 => new Feature{
-                   action = _downloadProcess.update
+                4 => new Feature
+                {
+                    name = "資料夾雲端下載",
+                    action = _syncProcess.pull,
+                    withCloud = true,
+                },
+                5 => new Feature
+                {
+                    name = "重製資料",
+                    action = _dataObjectHandler.resetBin,
+                    successMessage = "資料重製成功"
+                },
+                6 => new Feature
+                {
+                    name = "更新程式",
+                    action = _downloadProcess.update
                 },
                 _ => null
             };
@@ -41,10 +64,22 @@ namespace youtbue下載介面.App
             int route;
             while(true)
             {
-                if (onlineMode)
-                    Console.WriteLine("功能選擇(請輸入數字1, 2 ,3 ...) : 1.單一下載 2.歌單新曲下載 3.歌單舊曲查詢下載 4.重置程式資料 5. 更新程式");
-                else
-                    Console.WriteLine("功能選擇(請輸入數字1, 2 ...) : 1.單一下載 2.歌單新曲下載 4.重置程式資料 5. 更新程式");
+                Console.WriteLine("功能選擇(請輸入數字1, 2 ,3 ... )");
+                int i = 1;
+
+                while (GetCurrentFeature(i) is Feature feature)
+                {
+                    if (!onlineMode && feature.withCloud)
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    Console.Write($"{i}=> {feature.name}, ");
+                    i++;
+   
+                }
+
                 if(Int32.TryParse( Console.ReadLine(), out route) )
                 {
                     try{

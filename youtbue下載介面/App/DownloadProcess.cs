@@ -8,53 +8,70 @@ namespace youtbue下載介面.App
 
     public class DownloadProcess
     {
-        StringBuilder cmdOutput;
-
+        bool willDownloadPlayList = false;
         CMDAppender _cMDAppender;
-        DateTime downloadStart;
         internal DownloadProcess(CMDAppender cMDAppender)
         {
-            cmdOutput = new StringBuilder();
             _cMDAppender = cMDAppender;
         }
-        private void run(string arguments)
+        public void downloadOne()
         {
-            Process process = new Process();
-            process.StartInfo.FileName = 
-            _cMDAppender.os == "windows" ? "cmd.exe" : "python3";
-            process.StartInfo.WorkingDirectory = @"./";
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.UseShellExecute = false;
-            process.OutputDataReceived += new DataReceivedEventHandler((sender, e) => {
-                cmdOutput.Append(e.Data);
-                Console.WriteLine(e.Data);
-
-            });
-            downloadStart = DateTime.Now;
-            process.StartInfo.Arguments = arguments;
-            Console.WriteLine($"開始執行: , {process.StartInfo.Arguments}");
-            process.Start();
-            process.BeginOutputReadLine();
-            process.WaitForExit();
-            process.Dispose();
-        }
-        public void download()
-        {
-            _cMDAppender.AppendOutPutPath();
-            _cMDAppender.AppendDowndUrl();
-            run(_cMDAppender.GetCMD().ToString()) ;
-
-        }
-        public void downloadPlayList()
-        {
-            _cMDAppender.AppendPlayList();
+            willDownloadPlayList = false;
             download();
         }
 
+        private void download()
+        {
+            Console.Write("請輸入下載格式代碼 ( ");
+
+            foreach (DownloadType type in Enum.GetValues(typeof(DownloadType)))
+            {
+                Console.Write($"{type} => {(int)type}");
+            }
+
+            Console.Write(")");
+
+            string downloadType = Console.ReadLine();
+            string outputPath = "";
+
+            if (!Enum.TryParse<DownloadType>(downloadType, out DownloadType downloadTypeEnum))
+                throw new Exception("無法辨識你輸入的格式");
+            else
+            {
+                if (downloadTypeEnum == DownloadType.Audio)
+                {
+                    Console.WriteLine("請輸入格式(best/aac/flac/mp3/m4a/opus/vorbis/wav): \n");
+                    string format = Console.ReadLine();
+                    outputPath = _cMDAppender.AppendOutPutPath(downloadTypeEnum, format);
+                }
+                else if (downloadTypeEnum == DownloadType.Video)
+                {
+                    outputPath = _cMDAppender.AppendOutPutPath(downloadTypeEnum);
+                }
+
+            }
+            if(willDownloadPlayList)
+            {
+                FileInfo[] fileInfos = new DirectoryInfo(outputPath).GetFiles();
+                _cMDAppender.AppendPlayList(fileInfos.Select(e => e.Name).ToArray() );
+            }
+
+            Console.WriteLine("請輸入下載連結");
+            string url = Console.ReadLine() ?? "" ;
+            _cMDAppender.AppendDowndUrl(url);
+
+            _cMDAppender.run();
+        }
+        
+        public void downloadPlayList()
+        {
+            willDownloadPlayList = true;
+            download();
+        }
         public void update()
         {
             _cMDAppender.Append("--update-to master");
-            run(_cMDAppender.GetCMD().ToString());
+            _cMDAppender.run();
         }
     }
 }

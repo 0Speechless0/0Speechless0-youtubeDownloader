@@ -10,17 +10,13 @@ namespace youtbue下載介面.Models
     public class listObject
     {
         public string listCode { get; set; }
-        public int downloadCount { get; set; } = 0;
-        public int lastDownLoadIndex { get; set; } = 0;
-        public DateTime lastUploadTime { get; set; }
         public string dirName {get;set ;}
 
+        public string fullDirName {get;set ;}
         public string listName { get; set; }
         public List<int> startIndexHistory { get; set; } = new List<int>();
 
-        public List<string> HistoryListName { get; set; } = new List<string>();
 
 
-        public List<HistoryDownload> HistoryDownloadList { get; set; } = new List<HistoryDownload>();
     }
 }

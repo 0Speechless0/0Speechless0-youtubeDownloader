@@ -7,6 +7,8 @@ namespace youtbue下載介面.App
         public Action error_action {get;set;}
         Queue<string> _alert_msg;
 
+        public string name { get; set; }
+        public bool withCloud { get; set; } = false;
         public string successMessage {get;set;}
         public string errorMessage {get;set;}
         public Feature nextFeature{ get;set;}

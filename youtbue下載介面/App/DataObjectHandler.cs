@@ -13,8 +13,7 @@ namespace youtbue下載介面.App
     {
         DataObject _dataObject { get; set; }
         CloudHander? _cloudHander = null;
-
-        public KeyValuePair<string, listObject>[] ListObjectArr { get; }    
+ 
 
         public bool cloudConnected {get;set;}
         public DataObjectHandler(Func<DataObject, CloudHander> createCloudHander)
@@ -30,10 +29,11 @@ namespace youtbue下載介面.App
             {
                 _dataObject = new DataObject();
             }
-            ListObjectArr = _dataObject.ListDic.ToArray();
+            // ListObjectArr = _dataObject.ListDic.ToArray();
             _cloudHander = createCloudHander.Invoke(_dataObject);
             willSetCloudUser();
         }
+
         public void willCloudSet()
         {
                         // checker: remote and user
@@ -50,12 +50,13 @@ namespace youtbue下載介面.App
         }
         private async Task willSetCloudUser()
         {
-            if(_dataObject.nextCloudUrl == null)
+            if (_dataObject.nextCloudUrl == null)
                 willCloudSet();
-            if(_dataObject.nextCloudUrl == "")
-                cloudConnected =  false;
+            if (_dataObject.nextCloudUrl == "")
+                cloudConnected = false;
             Console.WriteLine("資料檢查中，請稍後...");
-            try { 
+            try
+            {
                 do
                 {
 
@@ -83,36 +84,58 @@ namespace youtbue下載介面.App
                         Console.WriteLine("請稍後...");
                     }
 
-                }while(true);
+                } while (true);
             }
-            catch (Exception e){
+            catch (Exception e)
+            {
                 Console.WriteLine("無雲端連線建立，使用本地模式");
-                cloudConnected =  false;
+                cloudConnected = false;
             }
             cloudConnected = true;
         }
-        public List<string> showListName()
+
+        public async Task uploadFilesToCloud(string dir)
         {
-            int i = 0;
-            return _dataObject.ListDic.Select(row => $"({++i})[{row.Value.listName}]").ToList();
+            await _cloudHander.uploadFiles(dir);
         }
 
-        public listObject GetListObject(int index)
+        public async Task saveFileName(string filePath)
         {
-            return ListObjectArr[index - 1].Value;
-        }
-        public List<string> showListHistory(int index)
-        {
-            int i = 0;
-            return ListObjectArr[index -1].Value
-                .HistoryDownloadList
-                .Select(row => $"({++i})({row.Name})[{row.CreateTime}]").ToList();
-        }
+            string fullDirPath = Path.GetDirectoryName(filePath) ?? "";
+            string fileName = Path.GetFileName(filePath);
+            if (_dataObject.SongGroups.TryGetValue(fullDirPath, out List<string> fileArr))
+            {
+                _dataObject.SongGroups[fullDirPath]?.Add(fileName);
+            } 
+            else
+            {
+                _dataObject.SongGroups.Add(fullDirPath, new string[]{ Path.GetFileName(filePath)}.ToList() );                
+            }
 
-        public void updateDownloadIndex(string listCode, int i)
-        {
-            _dataObject.ListDic[listCode].lastDownLoadIndex = i;
         }
+        // public List<string> showListName()
+        // {
+        //     int i = 0;
+        //     return _dataObject.ListDic.Select(row => $"({++i})[{row.Value.listName}]").ToList();
+        // }
+
+        
+        // public listObject GetListObject(int index)
+        // {
+        //     return ListObjectArr[index - 1].Value;
+        // }
+        // public List<string> showListHistory(int index)
+        // {
+        //     int i = 0;
+        //     return ListObjectArr[index -1].Value
+        //         .HistoryDownloadList
+        //         .Select(row => $"({++i})({row.Name})[{row.CreateTime}]").ToList();
+        // }
+
+        // public void updateDownloadIndex(string listCode, int i)
+        // {
+        //     _dataObject.ListDic[listCode].lastDownLoadIndex = i;
+        // }
 
         public listObject setListObjectByCode(string listCode, string listName)
         {

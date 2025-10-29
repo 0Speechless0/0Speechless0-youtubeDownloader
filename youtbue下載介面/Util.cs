@@ -1,20 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using youtbue下載介面.Models;
 
 namespace youtbue下載介面
 {
     internal static class Util 
     {
 
-
-        public static string[] getUrlArgs(this string url)
+        public static string? getListCode(this string url)
         {
+
+
             string[] urlArr = url.Split('/');
             string[] urlMainDiv = (urlArr.Length > 0 ? urlArr[urlArr.Length - 1] : "").Split('?');
             if(urlMainDiv.Length <2 )
@@ -22,7 +25,8 @@ namespace youtbue下載介面
                 Console.WriteLine("url 不帶參數，無法進行下載");
                 return null;
             }
-            return urlMainDiv[1].Split('&');
+            string[] urlArg = urlMainDiv[1].Split('&');
+            return urlArg.Length > 0 ? urlArg.FirstOrDefault(r => r.Contains("list=") )?.Split('=')[1] : "" ;
         }
         public static int getPlayListItemCount(this string listCode)
         {
@@ -31,6 +35,7 @@ namespace youtbue下載介面
         }
 
         static string playlistOutput = null;
+
         static string getPlayListInfo(string listCode) {
             //if (playlistOutput != null) return playlistOutput;
             var p = System.Diagnostics.Process.Start(new ProcessStartInfo

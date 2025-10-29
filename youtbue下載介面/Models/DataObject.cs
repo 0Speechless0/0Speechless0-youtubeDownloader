@@ -11,12 +11,15 @@ namespace youtbue下載介面.Models
     {
 
         public Dictionary<string, listObject> ListDic;
+        public Dictionary<string, List<string>> SongGroups;
         public UserInfo userinfo;
         public string nextCloudUrl;
+        internal object youtubeUserName;
 
-        public DataObject() { 
-            userinfo = new UserInfo();
-            ListDic = new Dictionary<string, listObject>();
+        public DataObject() {
+            userinfo    = new UserInfo();
+            SongGroups = new Dictionary<string, List<string> >();
+            // ListDic = new Dictionary<string, listObject>();
         } 
     }
 }

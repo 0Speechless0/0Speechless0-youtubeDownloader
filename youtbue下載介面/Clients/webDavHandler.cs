@@ -165,7 +165,7 @@ namespace youtbue下載介面.Clients
         //        }
 
         //    } while (startUpload || uploadFileQueue.Count > 0);
-            
+
         //    //var file = Directory.GetFiles(dir)
         //    //    .Select(file => new FileInfo(file))
         //    //    .Where(file => !file.Name.Contains(".webm"))
@@ -179,13 +179,14 @@ namespace youtbue下載介面.Clients
         //    //    var result = await webDavClient.PutFile($"{dirName}/{file.Name}", File.OpenRead(file.FullName));
         //    //}    
         //}
-        public async Task uploadFile(string? dir, string dirName, DateTime? beginTime)
+        public async Task uploadFiles(string dir, DateTime? beginTime)
         {
             beginTime = beginTime ?? DateTime.MinValue;
             var files = Directory.GetFiles(dir)
                 .Select(file => new FileInfo(file))
                 .OrderBy(file => file.CreationTime)
-                .Where(file => file.CreationTime > beginTime );
+                .Where(file => file.CreationTime > beginTime);
+            string dirName = Path.GetFileName(dir);
             webDavClient.Mkcol($"{dirName}");
             int i = 0;
             foreach (var file in files)
@@ -193,6 +194,22 @@ namespace youtbue下載介面.Clients
                 Console.WriteLine($"上傳 {file.Name} ({++i}/{files.Count()}) ...");
 
                 var result = await webDavClient.PutFile($"{dirName}/{file.Name}", File.OpenRead(file.FullName));
+            }
+
+        }
+        public async Task uploadFiles(string dir,  string[] fileNames)
+        {
+            var files = Directory.GetFiles(dir)
+                .Select(file => new FileInfo(file))
+                .OrderBy(file => file.CreationTime);
+            string dirName = Path.GetFileName(dir);
+            webDavClient.Mkcol($"{dirName}");
+            int i = 0;
+            foreach (var name in fileNames)
+            {
+                Console.WriteLine($"上傳 {name} ({++i}/{files.Count()}) ...");
+
+                var result = await webDavClient.PutFile($"{dirName}/{name}", File.OpenRead(Path.Combine(dir, name)));
             }
 
         }
@@ -226,97 +243,6 @@ namespace youtbue下載介面.Clients
             return auth;
         }
 
-
-        public async Task downloadByfilter(listObject listObject, string filter)
-        {
-            var fileNameList =  await getFileNameListByFilter(listObject, filter);
-            foreach(var file in fileNameList)
-            {
-                using (var response = await webDavClient.GetRawFile($"{listObject.listName}/{file.DisplayName}"))
-                {
-                    string dir ="";
-                    if(file.ContentType.StartsWith("video"))
-                    {
-                        dir = videoDir;
-                    }
-                    if(file.ContentType.StartsWith("audio"))
-                    {
-                        dir = audioDir;
-                    }
-                    if(!Directory.Exists(Path.Combine(dir, $"{listObject.listName}"))) 
-                        Directory.CreateDirectory(Path.Combine(dir, $"{listObject.listName}"));
-                    using (var fileStream = File.Create(Path.Combine(dir, $"{listObject.listName}/{file.DisplayName}")))
-                    {
-                        response.Stream.CopyTo(fileStream);
-                    }
-                }
-            }
-        }
-        private async Task<IEnumerable<WebDavResource>> getFileNameListByFilter(listObject listObject, string filter)
-        {
-            var response =  await webDavClient.Propfind($"{listObject.listName}", propfindParamters);
-          
-            if(Int32.TryParse(filter, out int index))
-            {
-                int startIndex = listObject.HistoryDownloadList[index-1].startIndex;
-                int endIndex = listObject.HistoryDownloadList[index - 1].endIndex;
-                return response.Resources.OrderBy(r => r.LastModifiedDate)
-                    .Skip(startIndex)
-                    .Take(endIndex);
-
-            }
-            else if (filter.Contains("~"))
-            {
-                int[] arr = filter.Split("~").Select(r => Convert.ToInt32(r) ).ToArray();
-                if (arr.Length != 2) throw new Exception("編號範圍設定錯誤");
-
-                int min = Math.Min(arr[0], arr[1]);
-                int max = Math.Max(arr[0], arr[1]);
-                if (min > 0 && max < listObject.startIndexHistory.Count())
-                {
-                    int startIndex = listObject.HistoryDownloadList[min - 1].startIndex;
-                    int endIndex = listObject.HistoryDownloadList[max - 1].endIndex;
-                    //int endIndex = arr[1] < listObject.startIndexHistory.Count() ?
-                    //listObject.startIndexHistory[arr[1]] : listObject.lastDownLoadIndex;
-                    return response.Resources.OrderBy(r => r.LastModifiedDate)
-                        .Skip(startIndex)
-                        .Take(endIndex);
-
-                }
-                else
-                {
-                    throw new Exception("編號範圍超出");
-                }
-
-
-            }
-            else if(Int32.TryParse(filter.Replace(",", ""), out int i) )
-            {
-                var resuult = new List<WebDavResource>();
-                while(i> 0)
-                {
-
-                    i /= 10;
-                    int historyIndex = (i % 10) - 1;
-                    resuult.AddRange(response.Resources.OrderBy(r => r.CreationDate)
-                        .ToList()
-                        .GetRange(
-                            listObject.HistoryDownloadList[i].startIndex,
-                            listObject.HistoryDownloadList[i].endIndex
-                        )
-                    );
-
-
-                }
-                return resuult;
-                
-            }
-            else
-            {
-                throw new Exception("輸入格式錯誤");
-            }
-            return null;
-        }
 
 
     }

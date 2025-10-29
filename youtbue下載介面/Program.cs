@@ -14,35 +14,49 @@ using CG.Web.MegaApiClient;
 using System.Security.Cryptography.X509Certificates;
 
 Config config = new Config();
-string uploadHost = config.nextCloudHost;
 
 System.Net.ServicePointManager.ServerCertificateValidationCallback =
     (sender, cert, chain, sslPolicyErrors) => true;
     
-//if (!File.Exists(".\\yt-dlp.exe"))
-//    System.Diagnostics.Process.Start("CMD.exe", "/C xcopy /Y /Q ..\\..\\..\\myBin\\ .\\ > nul");
 
 
 Console.Write("-------------歡迎使用youtube網址連結下載工具 ^__^------------ " +
     "\n\n注意:請確保歌單所有歌曲下載可行性\n\n\t\t\t\t\t\t\t\t\t\t\t作者:鄧臣宏(Alex) \n" +
     "------------------------------\n\n");
-DataObjectHandler dataObjectHandler = new DataObjectHandler((DataObject dataObject) => new webDavHandler(dataObject, "youtubeDownloader" ));
+DataObjectHandler dataObjectHandler = new DataObjectHandler(
+    (DataObject dataObject) => new webDavHandler(dataObject, "youtubeDownloader")
+);
 // DataObjectHandler dataObjectHandler = new DataObjectHandler(() => new megaClientHandler("youtubeDownloader") );
-string os= "";
+OS os ;
+
+ytdlpHandler?   ytdlpHandler    =   null;
+ffmpegHandler   ffmpegHandler   =   new ffmpegHandler();
+pythonInstaller pythonInstaller =   new pythonInstaller();
+string          userProfile     =   Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
-    await new ytdlpHandler().installIfNotExist("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe");
-    os ="windows";
+    ytdlpHandler = new ytdlpHandler(OS.Windows);
+    await ffmpegHandler.installIfNotExist();
+    os = OS.Windows;
+}
+
+else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+{
+    ytdlpHandler = new ytdlpHandler(OS.Linux);
+    // 會安裝 ffmpeg
+    await pythonInstaller.tryPipInstall();
+    os = OS.Linux;
 }
 else
 {
-    await new ytdlpHandler().installIfNotExist("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp");
-    os="linux";
+    Console.WriteLine("系統不支援");
+    return; 
 }
 
-await new ffmpegHandler().installIfNotExist();
+
+await ytdlpHandler.installIfNotExist();
 
 
-FeatureSwitcher featureSwitcher = new FeatureSwitcher(new CMDAppender(dataObjectHandler, os),  dataObjectHandler);
+FeatureSwitcher featureSwitcher = new FeatureSwitcher(os, userProfile,  dataObjectHandler);
 featureSwitcher.Run(dataObjectHandler.cloudConnected);

@@ -10,9 +10,8 @@ namespace youtbue下載介面.Interface
         Task<bool> login();
 
         Task<DataObject> pullRemoteData(DataObject dataObject);
-        Task uploadFile(string? dir, string dirName, DateTime? beginTime);
+        Task uploadFiles(string dir, DateTime? beginTime = null);
         Task updateTempData(string path);
 
-        Task downloadByfilter(listObject listObject, string filter);
     }
 }
