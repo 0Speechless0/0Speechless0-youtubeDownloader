@@ -106,3 +106,18 @@ tempData是判斷本地模式與線上模式的依據，tempData紀錄雲端的�
 cd youtbue下載介面
 dotnet run
 ```
+
+## build for windows
+
+```code
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+
+```
+
+## build for linux
+
+```code
+dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true
+
+
+```

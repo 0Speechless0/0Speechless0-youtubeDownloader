@@ -64,9 +64,14 @@ namespace youtbue下載介面.Clients
             {
                 runInstallation("/bin/bash", "-c \"sudo apt update && sudo apt install -y python3\"");
             }
-            if(!isInstalledOnPython("-m pip"))
+            if (!isInstalledOnPython("-m pip"))
             {
                 runInstallation("python3", "-m ensurepip --default-pip");
+
+            }
+            if(!isInstalledOnPython("-m pip show mutagen"))
+            {
+                runInstallation("python3", "-m pip install mutagen");
 
             }
             // if(!isInstalledOnPython("-m yt_dlp"))

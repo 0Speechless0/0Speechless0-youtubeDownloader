@@ -9,26 +9,25 @@ namespace youtbue下載介面.App
     {
         DataObjectHandler _dataObjectHandler;
         StringBuilder cmdOutput;
-        string _userProfile;
         string cmdOptions = "";
         StringBuilder _cmd;
         string? listCode;
 
         string _url= "";
+        string musicFolder;
+        string videoFolder;
+        public OS _os { get; set; }
 
-        public OS os { get; set; }
-
-        public CMDAppender(DataObjectHandler dataObjectHandler, OS os, string? userProfile = null)
+        public CMDAppender(DataObjectHandler dataObjectHandler, OS os)
         {
 
-            _cmd = os switch
-            {
-                OS.Windows => new StringBuilder("/C yt-dlp"),
-                OS.Linux => new StringBuilder("yt-dlp"),
-                _ => new StringBuilder()
-            };
-            _userProfile = userProfile ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            _os = os;
+            _cmd = new StringBuilder();
             _dataObjectHandler = dataObjectHandler;
+            cmdOutput = new StringBuilder();
+
+            musicFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+            videoFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
 
         }
         
@@ -37,7 +36,7 @@ namespace youtbue下載介面.App
         {
             string arguments = GetCMD().ToString();
             Process process = new Process();
-            process.StartInfo.FileName = os switch
+            process.StartInfo.FileName = _os switch
             {
                 OS.Windows => "cmd.exe",
                 OS.Linux => "python3",
@@ -61,6 +60,7 @@ namespace youtbue下載介面.App
             process.Dispose();
 
             cmdOptions = "";
+            _cmd.Clear();
             return cmdOutput.ToString();
         }
         
@@ -69,39 +69,40 @@ namespace youtbue下載介面.App
             return listCode != null;
         }
         public void AppendDowndUrl(string url){
-            _url = url;
-            string[] urlArr = url.Split('/');
-            string[] urlMainDiv = (urlArr.Length > 0 ? urlArr[urlArr.Length - 1] : "").Split('?');
 
-            if(urlMainDiv.Length <2 )
-            {
-                Console.WriteLine("url 不帶參數，無法進行下載");
-                return ;
-            }
+            string[] urlArr      = url.Split('/');
+            string   url_path    = url.Split('?')[0];
+            string[] urlMainDiv = (urlArr.Length > 0 ? urlArr[urlArr.Length - 1] : "").Split('?');
             string[] urlArg = urlMainDiv[1].Split('&');
+            string? videoArg = urlArg.FirstOrDefault(e => e.Contains("v="));
             listCode = urlArg.Length > 0 ? urlArg.FirstOrDefault(r => r.Contains("list=") )?.Split('=')[1] : "" ;
-            
+            _url = $"{url_path}?{videoArg}";
+            if(url_path.Split("/").LastOrDefault() == "playlist" )
+            {
+                _url += $"&list={listCode}";
+            }
         }
-        public string AppendOutPutPath(DownloadType downloadType, string? format = null)
+        
+        public string AppendOutPutPath(DownloadType downloadType)
         {
             cmdOptions += downloadType switch
             {
-                DownloadType.Audio => $" -x --audio-format {format}",
-                _ => ""
+                DownloadType.Audio => $" -x --embed-thumbnail --add-metadata --audio-format best",
+                DownloadType.Video => " -f bestvideo+bestaudio --merge-output-format mp4"
             };
-            string dirName = downloadType switch
+            string folder = downloadType switch
             {
-                DownloadType.Audio => "Music",
-                DownloadType.Video => "Video",
+                DownloadType.Audio => musicFolder,
+                DownloadType.Video => videoFolder,
                 _ => ""
             };
-            CMDCatcher cMDCatcher = new CMDCatcher(new CMDAppender(_dataObjectHandler, os));
-            string? subDirName = listCode != null ? cMDCatcher.getPlayListName(listCode) : null;
+            CMDCatcher cMDCatcher = new CMDCatcher(new CMDAppender(_dataObjectHandler, _os));
+            string? subDirName = cMDCatcher.getPlayListName(listCode);
+            subDirName = string.IsNullOrEmpty(subDirName) ? "Default" : subDirName;
             string outputPath = Path.Combine(
-                _userProfile,
-                dirName,
-                $"{subDirName ?? "Default"}",
-                $"%(title)s.%(ext)s"
+                folder,
+                $"{subDirName}",
+                $"%(title)s-%(id)s.%(ext)s"
             ); 
             cmdOptions += $" -o \"{outputPath}\"";
             if (!Directory.Exists(Path.GetDirectoryName(outputPath)))
@@ -120,11 +121,11 @@ namespace youtbue下載介面.App
         //     }
         //     cmdOptions += ! cmdOptions.Contains(" -I ") ? $" -I {appendingListObject.lastDownLoadIndex + 1}::1" : "";
         // }
-        public void AppendPlayList(string[]? skipTitle = null)
+        public void AppendPlayList(string[]? skipID = null)
         {
-            skipTitle ??= Array.Empty<string>();
+            skipID ??= Array.Empty<string>();
             cmdOptions += " --yes-playlist";
-            string filterStr = string.Join("&", skipTitle.Select(e => $"title!='{e}'"));
+            string filterStr = string.Join("&", skipID.Select(e => $"id!='{e}'"));
             cmdOptions += filterStr.Length > 0 ? $" --match-filter \"{filterStr}\"" : "" ;
         }
 
@@ -132,8 +133,16 @@ namespace youtbue下載介面.App
         {
             cmdOptions += $" {str}"; 
         }
+        
         public StringBuilder GetCMD()
         {
+            string start_arg = _os switch
+            {
+                OS.Windows => "/C yt-dlp",
+                OS.Linux => "yt-dlp",
+                _ => ""
+            };
+            _cmd.Append($"{start_arg}");
             _cmd.Append($" {cmdOptions}");
             _cmd.Append($" {_url}");
             return _cmd;

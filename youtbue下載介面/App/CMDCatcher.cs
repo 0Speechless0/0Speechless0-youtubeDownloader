@@ -28,7 +28,7 @@ namespace youtbue下載介面.App
         
         public string getPlayListName(string listCode)
         {
-            _cMDAppender.Append($" --quiet --no-error --print \"%(playlist_title)s\" https://www.youtube.com/playlist?list={listCode}"); 
+            _cMDAppender.Append($" --quiet --print \"%(playlist_title)s\"  --flat-playlist --playlist-end 1  https://www.youtube.com/playlist?list={listCode}"); 
             return _cMDAppender.run().Split("\n").Last();
         }
         public listObject[] getPlayListObjects(string userName)

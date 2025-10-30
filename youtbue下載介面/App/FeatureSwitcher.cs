@@ -14,7 +14,7 @@ namespace youtbue下載介面.App
         internal FeatureSwitcher(OS os, string filePath, DataObjectHandler  dataObjectHandler)
         {
 
-            _downloadProcess    = new DownloadProcess(new CMDAppender(dataObjectHandler, os, filePath));
+            _downloadProcess    = new DownloadProcess(new CMDAppender(dataObjectHandler, os));
             _syncProcess        = new SyncProcess(dataObjectHandler, filePath);
             _dataObjectHandler = dataObjectHandler;
         }
