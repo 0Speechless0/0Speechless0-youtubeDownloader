@@ -11,11 +11,11 @@ namespace youtbue下載介面.App
         DownloadProcess _downloadProcess;
         SyncProcess _syncProcess;
         DataObjectHandler _dataObjectHandler;
-        internal FeatureSwitcher(OS os, string filePath, DataObjectHandler  dataObjectHandler)
+        internal FeatureSwitcher(OS os, DataObjectHandler  dataObjectHandler)
         {
 
             _downloadProcess    = new DownloadProcess(new CMDAppender(dataObjectHandler, os));
-            _syncProcess        = new SyncProcess(dataObjectHandler, filePath);
+            _syncProcess        = new SyncProcess(dataObjectHandler);
             _dataObjectHandler = dataObjectHandler;
         }
         private Feature? GetCurrentFeature(int route)
@@ -36,7 +36,7 @@ namespace youtbue下載介面.App
                 3 => new Feature
                 {
                     name = "資料夾雲端上傳",
-                    action = _syncProcess.push,
+                    action = _syncProcess.preparePush,
                     withCloud = true,
                 },
                 4 => new Feature

@@ -20,19 +20,13 @@ System.Net.ServicePointManager.ServerCertificateValidationCallback =
     
 
 
-Console.Write("-------------歡迎使用youtube網址連結下載工具 ^__^------------ " +
-    "\n\n注意:請確保歌單所有歌曲下載可行性\n\n\t\t\t\t\t\t\t\t\t\t\t作者:鄧臣宏(Alex) \n" +
-    "------------------------------\n\n");
-DataObjectHandler dataObjectHandler = new DataObjectHandler(
-    (DataObject dataObject) => new webDavHandler(dataObject, "youtubeDownloader")
-);
+
 // DataObjectHandler dataObjectHandler = new DataObjectHandler(() => new megaClientHandler("youtubeDownloader") );
 OS os ;
 
 ytdlpHandler?   ytdlpHandler    =   null;
 ffmpegHandler   ffmpegHandler   =   new ffmpegHandler();
 pythonInstaller pythonInstaller =   new pythonInstaller();
-string          userProfile     =   Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
@@ -53,10 +47,15 @@ else
     Console.WriteLine("系統不支援");
     return; 
 }
-
+Console.Write("-------------歡迎使用youtube網址連結下載工具 ^__^------------ " +
+    "\n\n注意:請確保歌單所有歌曲下載可行性\n\n\t\t\t\t\t\t\t\t\t\t\t作者:鄧臣宏(Alex) \n" +
+    "------------------------------\n\n");
+DataObjectHandler dataObjectHandler = new DataObjectHandler(
+    (DataObject dataObject) => new webDavHandler(dataObject, "youtubeDownloader")
+);
 
 await ytdlpHandler.installIfNotExist();
 
 
-FeatureSwitcher featureSwitcher = new FeatureSwitcher(os, userProfile,  dataObjectHandler);
+FeatureSwitcher featureSwitcher = new FeatureSwitcher(os,   dataObjectHandler);
 featureSwitcher.Run(dataObjectHandler.cloudConnected);

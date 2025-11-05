@@ -1,3 +1,4 @@
+using System.Security.AccessControl;
 using System.Threading.Tasks;
 using youtbue下載介面.Interface;
 using youtbue下載介面.Models;
@@ -13,11 +14,8 @@ namespace youtbue下載介面.App
         CloudHander _cloudHandler;
         DirectoryInfo[] directories;
         int dirCount;
-        public SyncProcess(DataObjectHandler dataObjectHandler, string filePath)
+        public SyncProcess(DataObjectHandler dataObjectHandler)
         {
-            _filePath           = filePath;
-            directories         = new DirectoryInfo(_filePath).GetDirectories();
-            dirCount            = directories.Count();
             _dataObjectHandler  = dataObjectHandler;
         }
 
@@ -30,17 +28,31 @@ namespace youtbue下載介面.App
                 return count / pageSize + 1;
             }
         }
-        public void push()
+        public void preparePush()
         {
 
-            if(dirCount == 0)
+
+
+            Console.WriteLine("請選擇要上傳的類別(0 => 音樂, 1 => 影片): ");
+            string n = Console.ReadLine();
+
+            string filePath = n switch 
             {
-                Console.WriteLine("沒有資料夾");
+                "0" => Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+                "1" => Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
+                _ => ""
+            };
+
+            if (filePath == "")
+            {
+                Console.WriteLine("無效的類別");
                 return;
             }
-
+            
             int page = 1;
-            Console.WriteLine("輸入上傳資料夾代號：");
+            
+            directories         = new DirectoryInfo(filePath).GetDirectories();
+            dirCount            = directories.Count();
             while (true)
             {
                 Dictionary<int, string> folderDic =
@@ -53,9 +65,9 @@ namespace youtbue下載介面.App
 
                 foreach (KeyValuePair<int, string> keyValuePair in folderDic)
                 {
-                    Console.WriteLine($"{keyValuePair.Key + 1} => {keyValuePair.Value}");
+                    Console.WriteLine($"{keyValuePair.Key + 1} => {Path.GetDirectoryName(keyValuePair.Value) }");
                 }
-                Console.WriteLine($"目前在第{page}頁 / 共 {getPageCount(dirCount)}, 輸入上傳資料夾 代號 或 頁碼+p : ");
+                Console.WriteLine($"目前在第{page}頁 / 共 {getPageCount(dirCount)}頁, 輸入上傳資料夾 代號 或 頁碼+p : ");
                 string typeRoute = Console.ReadLine() ?? "";
 
                 if (Int32.TryParse(typeRoute, out int route))

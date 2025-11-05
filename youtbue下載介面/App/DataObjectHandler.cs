@@ -48,7 +48,7 @@ namespace youtbue下載介面.App
                  Console.WriteLine("無雲端連線建立，使用本地模式");
             }
         }
-        private async Task willSetCloudUser()
+        private void willSetCloudUser()
         {
             if (_dataObject.nextCloudUrl == null)
                 willCloudSet();
@@ -60,10 +60,11 @@ namespace youtbue下載介面.App
                 do
                 {
 
-                    await _cloudHander.login();
+                    _cloudHander.login().GetAwaiter().GetResult();
                     if (_dataObject.userinfo.account != null && _cloudHander.isConnection)
                     {
-                        _dataObject = await _cloudHander.pullRemoteData(_dataObject);
+                        _dataObject = _cloudHander.pullRemoteData(_dataObject).GetAwaiter().GetResult();
+                         Console.WriteLine("雲端連線建立成功，使用雲端模式");
                         break;
                     }
                     else
@@ -157,12 +158,12 @@ namespace youtbue下載介面.App
         }
         public void writeToBin(DataObject? dataObject = null)
         {
-            Data.WriteToBinaryFile<DataObject>(@".\tempData.bin",  dataObject ?? _dataObject);
+            Data.WriteToBinaryFile<DataObject>(@"tempData.bin",  dataObject ?? _dataObject);
         }
         public void resetBin()
         {
             _dataObject = new DataObject();
-            Data.WriteToBinaryFile<DataObject>(@".\tempData.bin",  _dataObject);
+            Data.WriteToBinaryFile<DataObject>(@"tempData.bin",  _dataObject);
         }
     }
 }

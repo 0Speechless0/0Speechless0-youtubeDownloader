@@ -45,6 +45,8 @@ namespace youtbue下載介面.Clients
         private string audioDir;
 
         private string rootDir;
+        private bool cloudTempDataExists = false; 
+
         public bool isConnection { get; set; } = false;
 
 
@@ -59,9 +61,8 @@ namespace youtbue下載介面.Clients
         public webDavHandler(DataObject dataObject, string dir = "")
         {
             rootDir = $"/{dir}";
-            var userProfileDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            audioDir = Path.Combine(userProfileDir, "Music");
-            videoDir = Path.Combine(userProfileDir, "Videos");
+            audioDir = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+            videoDir = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
             _dataObject = dataObject;
         }
 
@@ -91,16 +92,23 @@ namespace youtbue下載介面.Clients
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basicToken);
 
             webDavClient = new WebDavClient(httpClient);
-            tempDataFileResult = webDavClient.Propfind("data", propfindParamters).Result;
-            
-            if(tempDataFileResult.StatusCode == 404)
-            {
-                webDavClient.Mkcol($"..{rootDir}");
-                webDavClient.Mkcol($"data");
+            tempDataFileResult = webDavClient.Propfind("../data/tempData.bin", propfindParamters).Result;
 
-            }
-            if(tempDataFileResult.StatusCode != 401)
+
+
+            if (tempDataFileResult.StatusCode != 401)
             {
+                if (tempDataFileResult.StatusCode == 404)
+                {
+                    // webDavClient.Mkcol($"..{rootDir}");
+                    webDavClient.Mkcol($"../data");
+
+                }
+                else
+                {
+                    cloudTempDataExists = true;
+                }
+                
                 isConnection = true;
                 return true;
             }
@@ -218,13 +226,13 @@ namespace youtbue下載介面.Clients
             string tempDataPath = Path.Combine(".", "tempData.bin");
             using (var response = await webDavClient.GetRawFile("data/tempData.bin"))
             {
-                if (response.StatusCode == 404)
-                {
-                    Data.WriteToBinaryFile<DataObject>(tempDataPath, dataObject);
-                    await webDavClient.PutFile("data/tempData.bin", File.OpenRead(tempDataPath));                    
-                    return dataObject;
-                }
-                else
+                // if (!cloudTempDataExists)
+                // {
+                //     Data.WriteToBinaryFile<DataObject>(tempDataPath, dataObject);
+                //     await webDavClient.PutFile("data/tempData.bin", File.OpenRead(tempDataPath));                    
+                //     return dataObject;
+                // }
+                if(cloudTempDataExists)
                 {
                     using (var fileStream = File.Create(tempDataPath))
                     {
