@@ -65,7 +65,7 @@ namespace youtbue下載介面.App
 
                 foreach (KeyValuePair<int, string> keyValuePair in folderDic)
                 {
-                    Console.WriteLine($"{keyValuePair.Key + 1} => {Path.GetDirectoryName(keyValuePair.Value) }");
+                    Console.WriteLine($"{keyValuePair.Key } => {Path.GetFileName(keyValuePair.Value) }");
                 }
                 Console.WriteLine($"目前在第{page}頁 / 共 {getPageCount(dirCount)}頁, 輸入上傳資料夾 代號 或 頁碼+p : ");
                 string typeRoute = Console.ReadLine() ?? "";
@@ -73,7 +73,7 @@ namespace youtbue下載介面.App
                 if (Int32.TryParse(typeRoute, out int route))
                 {
                     if (folderDic.TryGetValue(route, out string? folderFullName))
-                        _cloudHandler.uploadFiles(folderFullName).Wait();
+                        _dataObjectHandler.uploadFilesToCloud(folderFullName).Wait();
                     break;
                 }
                 else if (typeRoute.EndsWith("p"))

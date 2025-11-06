@@ -41,8 +41,8 @@ namespace youtbue下載介面.Clients
                     XName.Get("getcontenttype", "DAV:")
                 }
         };
-        private string videoDir;
-        private string audioDir;
+
+
 
         private string rootDir;
         private bool cloudTempDataExists = false; 
@@ -61,8 +61,6 @@ namespace youtbue下載介面.Clients
         public webDavHandler(DataObject dataObject, string dir = "")
         {
             rootDir = $"/{dir}";
-            audioDir = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
-            videoDir = Environment.GetFolderPath(Environment.SpecialFolder.MyVideos);
             _dataObject = dataObject;
         }
 
@@ -116,96 +114,48 @@ namespace youtbue下載介面.Clients
             webDavClient.Dispose();
             return false;
         }
-        public  async Task<bool>  updateOrCreateTempData()
-        {
 
-            var tempDataFile = tempDataFileResult.Resources.Where(file => file.DisplayName == "tempData.bin").FirstOrDefault();
-            var localTempData = Directory.GetFiles(@".\").Select(file => new FileInfo(file))
-                .Where(file => file.Name == "tempData.bin")
-                .First();
-
-            if (tempDataFile == null)
-            {
-                var uploadResult = await webDavClient.PutFile("data/tempData.bin", File.OpenRead(@".\tempData.bin"));
-                localTempData.LastWriteTime = DateTime.Now;
-                return false;
-            }
-            else if(localTempData.LastWriteTime < tempDataFile.LastModifiedDate)
-            {
-                return true;
-            }
-            return false;
-        }
-        public async Task updateTempData(string path)
-        {
-            var uploadResult = await webDavClient.PutFile("data/tempData.bin", File.OpenRead(path));
-        }
-
-
-        //public void insertNewestFileToQueue(string? dir)
-        //{
-        //    var file = Directory.GetFiles(dir)
-        //        .Select(file => new FileInfo(file))
-        //        .Where(file => !file.Name.Contains(".webm"))
-        //        .OrderByDescending(file => file.CreationTime)
-        //        .FirstOrDefault();
-        //    uploadFileQueue.Enqueue(file.Name);
-        //}
-        //public void endUpload()
-        //{
-        //    this.startUpload = false;
-        //}
-        //public bool isUploading()
-        //{
-        //    return startUpload || uploadFileQueue.Count > 0;
-        //}
-        //public async Task uploadNewestFileInQueue(string? dir, string dirName)
-        //{
-        //    startUpload = true;
-        //    do
-        //    {
-        //        if(uploadFileQueue.Count > 0)
-        //        {
-        //            var fileName = uploadFileQueue.Dequeue();
-        //            Console.WriteLine($"上傳 {fileName} ...");
-        //            var fullName = Path.Combine(dir, fileName);
-        //            var result = await webDavClient.PutFile($"{dirName}/{fileName}", File.OpenRead(fullName));
-        //        }
-
-        //    } while (startUpload || uploadFileQueue.Count > 0);
-
-        //    //var file = Directory.GetFiles(dir)
-        //    //    .Select(file => new FileInfo(file))
-        //    //    .Where(file => !file.Name.Contains(".webm"))
-        //    //    .OrderByDescending(file => file.CreationTime)
-        //    //    .FirstOrDefault();
-        //    //webDavClient.Mkcol($"{dirName}");
-        //    //if (file != null)
-        //    //{
-        //    //    Console.WriteLine($"上傳 {file.Name} ...");
-
-        //    //    var result = await webDavClient.PutFile($"{dirName}/{file.Name}", File.OpenRead(file.FullName));
-        //    //}    
-        //}
-        public async Task uploadFiles(string dir, DateTime? beginTime)
+        public async Task uploadFiles(string fullDir, DateTime? beginTime)
         {
             beginTime = beginTime ?? DateTime.MinValue;
-            var files = Directory.GetFiles(dir)
+
+            string dir = Path.GetFileName(fullDir);
+            webDavClient.Mkcol($"{dir}");
+            HashSet<string> existsFile = (
+                 _dataObject.SongGroups.TryGetValue(dir, out List<string>? fileArr) ? fileArr : new List<string>()
+             ).ToHashSet<string>(); 
+            
+            var files = Directory.GetFiles(fullDir)
                 .Select(file => new FileInfo(file))
                 .OrderBy(file => file.CreationTime)
                 .Where(file => file.CreationTime > beginTime);
-            string dirName = Path.GetFileName(dir);
-            webDavClient.Mkcol($"{dirName}");
             int i = 0;
             foreach (var file in files)
             {
+                if (existsFile.Contains(file.Name))
+                    continue;
+
                 Console.WriteLine($"上傳 {file.Name} ({++i}/{files.Count()}) ...");
 
-                var result = await webDavClient.PutFile($"{dirName}/{file.Name}", File.OpenRead(file.FullName));
+                var result = await webDavClient.PutFile($"{dir}/{file.Name}", File.OpenRead(file.FullName));
+                if (result.IsSuccessful)
+                {
+   
+                    if(_dataObject.SongGroups.ContainsKey(dir))
+                    {
+                        _dataObject.SongGroups[dir].Add(file.Name);
+                    } 
+                    else
+                    {
+                        _dataObject.SongGroups.Add(dir, new string[]{ file.Name}.ToList() );                
+                    }
+                }
             }
+            await pushLocalData();
 
         }
-        public async Task uploadFiles(string dir,  string[] fileNames)
+
+        public async Task uploadFiles(string dir, string[] fileNames)
         {
             var files = Directory.GetFiles(dir)
                 .Select(file => new FileInfo(file))
@@ -221,10 +171,21 @@ namespace youtbue下載介面.Clients
             }
 
         }
-        public async Task<DataObject> pullRemoteData(DataObject dataObject)
+        public async Task<bool> pushLocalData()
         {
             string tempDataPath = Path.Combine(".", "tempData.bin");
-            using (var response = await webDavClient.GetRawFile("data/tempData.bin"))
+            Data.WriteToBinaryFile<DataObject>(tempDataPath, _dataObject);
+            var result = await webDavClient.PutFile($"../data/tempData.bin", File.OpenRead(tempDataPath ));
+            if (result.IsSuccessful)
+            {
+                return true;
+            }
+            return false;
+        }
+        public async Task<bool> pullRemoteData()
+        {
+            string tempDataPath = Path.Combine(".", "tempData.bin");
+            using (var response = await webDavClient.GetRawFile("../data/tempData.bin"))
             {
                 // if (!cloudTempDataExists)
                 // {
@@ -232,17 +193,19 @@ namespace youtbue下載介面.Clients
                 //     await webDavClient.PutFile("data/tempData.bin", File.OpenRead(tempDataPath));                    
                 //     return dataObject;
                 // }
-                if(cloudTempDataExists)
+                if (cloudTempDataExists)
                 {
                     using (var fileStream = File.Create(tempDataPath))
                     {
                         response.Stream.CopyTo(fileStream);
                     }
+                    return true;
                 }
 
 
             }
-            return Data.ReadFromBinaryFile<DataObject>(tempDataPath) ;
+            _dataObject.SongGroups = new Dictionary<string, List<string>>();
+            return false;
 
         }
 
@@ -251,7 +214,9 @@ namespace youtbue下載介面.Clients
             return auth;
         }
 
-
-
+        public Task downloadFiles(string dir, DateTime? beginTime = null)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -18,22 +18,12 @@ namespace youtbue下載介面.App
         public bool cloudConnected {get;set;}
         public DataObjectHandler(Func<DataObject, CloudHander> createCloudHander)
         {
-            string tempDataPath = Path.Combine(".", "tempData.bin");
-            if (File.Exists(tempDataPath))
-            {
-                _dataObject = Data.ReadFromBinaryFile<DataObject>(tempDataPath) ?? new DataObject();
-                // webDavHandler = new webDavHandler(DataObject, "youtubeDownload");
-
-            }
-            else
-            {
-                _dataObject = new DataObject();
-            }
-            // ListObjectArr = _dataObject.ListDic.ToArray();
+            _dataObject = new DataObject();
+            readFromBin();
             _cloudHander = createCloudHander.Invoke(_dataObject);
             willSetCloudUser();
         }
-
+        
         public void willCloudSet()
         {
                         // checker: remote and user
@@ -63,8 +53,11 @@ namespace youtbue下載介面.App
                     _cloudHander.login().GetAwaiter().GetResult();
                     if (_dataObject.userinfo.account != null && _cloudHander.isConnection)
                     {
-                        _dataObject = _cloudHander.pullRemoteData(_dataObject).GetAwaiter().GetResult();
-                         Console.WriteLine("雲端連線建立成功，使用雲端模式");
+                        if (_cloudHander.pullRemoteData().GetAwaiter().GetResult())
+                            readFromBin();
+                        else
+                            writeToBin();
+                        Console.WriteLine("雲端連線建立成功，使用雲端模式");
                         break;
                     }
                     else
@@ -91,7 +84,9 @@ namespace youtbue下載介面.App
             {
                 Console.WriteLine("無雲端連線建立，使用本地模式");
                 cloudConnected = false;
+                return;
             }
+
             cloudConnected = true;
         }
 
@@ -120,7 +115,7 @@ namespace youtbue下載介面.App
         //     return _dataObject.ListDic.Select(row => $"({++i})[{row.Value.listName}]").ToList();
         // }
 
-        
+
         // public listObject GetListObject(int index)
         // {
         //     return ListObjectArr[index - 1].Value;
@@ -140,8 +135,8 @@ namespace youtbue下載介面.App
 
         public listObject setListObjectByCode(string listCode, string listName)
         {
-            listObject targetList ;// checker : play list
-            if ( ! _dataObject.ListDic.TryGetValue(listCode, out targetList))
+            listObject targetList;// checker : play list
+            if (!_dataObject.ListDic.TryGetValue(listCode, out targetList))
             {
                 targetList = new listObject
                 {
@@ -156,9 +151,23 @@ namespace youtbue下載介面.App
             return targetList;
 
         }
+        public void readFromBin()
+        {
+            string tempDataPath = Path.Combine(".", "tempData.bin");
+            DataObject dataObject;
+            if (File.Exists(tempDataPath))
+            {
+                dataObject = Data.ReadFromBinaryFile<DataObject>(Path.Combine(".", "tempData.bin"));
+            }
+            else
+            {
+                dataObject = new DataObject();
+            }
+            _dataObject.SongGroups = dataObject.SongGroups;
+        }
         public void writeToBin(DataObject? dataObject = null)
         {
-            Data.WriteToBinaryFile<DataObject>(@"tempData.bin",  dataObject ?? _dataObject);
+            Data.WriteToBinaryFile<DataObject>(Path.Combine(".", "tempData.bin"),  dataObject ?? _dataObject);
         }
         public void resetBin()
         {
