@@ -43,7 +43,7 @@ namespace youtbue下載介面.App
                 {
                     if (canReportProgress)
                     {
-                        Console.WriteLine(@$"\下載進度：{totalRead/ totalBytes * 100} %");
+                        Console.WriteLine(@$"\下載進度：{(float)totalRead / totalBytes * 100:F1} %");
                     }
                     lastUpdate = DateTime.Now;
                 }

@@ -38,7 +38,7 @@ namespace youtbue下載介面.App
             Process process = new Process();
             process.StartInfo.FileName = _os switch
             {
-                OS.Windows => "cmd.exe",
+                OS.Windows => "yt-dlp.exe",
                 OS.Linux => "python3",
                 _ => ""
             };
@@ -138,7 +138,7 @@ namespace youtbue下載介面.App
         {
             string start_arg = _os switch
             {
-                OS.Windows => "/C yt-dlp",
+                OS.Windows => "",
                 OS.Linux => "yt-dlp",
                 _ => ""
             };

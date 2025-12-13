@@ -25,7 +25,8 @@ namespace youtbue下載介面.Clients
                 OS.Linux => "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp",
                 _ => ""
             };
-            downloader = new Downloader(downloadUrl, Path.Combine(".", fileName));
+            fileName = Util.GetFileNameFromUrl(downloadUrl);
+            downloader = new Downloader(downloadUrl, Path.Combine(".", fileName ));
         }
         public async Task installIfNotExist()
         {

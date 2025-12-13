@@ -22,7 +22,7 @@ namespace youtbue下載介面.Clients
     internal class webDavHandler : CloudHander
     {
         private bool auth = false;
-        public bool hasRemoteUrl  {get;} = true;
+        public bool hasRemoteUrl { get; } = true;
         private WebDavClient webDavClient;
 
         DataObject _dataObject;
@@ -45,7 +45,7 @@ namespace youtbue下載介面.Clients
 
 
         private string rootDir;
-        private bool cloudTempDataExists = false; 
+        private bool cloudTempDataExists = false;
 
         public bool isConnection { get; set; } = false;
 
@@ -106,7 +106,7 @@ namespace youtbue下載介面.Clients
                 {
                     cloudTempDataExists = true;
                 }
-                
+
                 isConnection = true;
                 return true;
             }
@@ -123,8 +123,8 @@ namespace youtbue下載介面.Clients
             webDavClient.Mkcol($"{dir}");
             HashSet<string> existsFile = (
                  _dataObject.SongGroups.TryGetValue(dir, out List<string>? fileArr) ? fileArr : new List<string>()
-             ).ToHashSet<string>(); 
-            
+             ).ToHashSet<string>();
+
             var files = Directory.GetFiles(fullDir)
                 .Select(file => new FileInfo(file))
                 .OrderBy(file => file.CreationTime)
@@ -140,14 +140,14 @@ namespace youtbue下載介面.Clients
                 var result = await webDavClient.PutFile($"{dir}/{file.Name}", File.OpenRead(file.FullName));
                 if (result.IsSuccessful)
                 {
-   
-                    if(_dataObject.SongGroups.ContainsKey(dir))
+
+                    if (_dataObject.SongGroups.ContainsKey(dir))
                     {
                         _dataObject.SongGroups[dir].Add(file.Name);
-                    } 
+                    }
                     else
                     {
-                        _dataObject.SongGroups.Add(dir, new string[]{ file.Name}.ToList() );                
+                        _dataObject.SongGroups.Add(dir, new string[] { file.Name }.ToList());
                     }
                 }
             }
@@ -175,7 +175,7 @@ namespace youtbue下載介面.Clients
         {
             string tempDataPath = Path.Combine(".", "tempData.bin");
             Data.WriteToBinaryFile<DataObject>(tempDataPath, _dataObject);
-            var result = await webDavClient.PutFile($"../data/tempData.bin", File.OpenRead(tempDataPath ));
+            var result = await webDavClient.PutFile($"../data/tempData.bin", File.OpenRead(tempDataPath));
             if (result.IsSuccessful)
             {
                 return true;
@@ -214,9 +214,67 @@ namespace youtbue下載介面.Clients
             return auth;
         }
 
-        public Task downloadFiles(string dir, DateTime? beginTime = null)
+        public async Task downloadFiles(string fromRemoteDir, string toLocalDir, DateTime? beginTime = null)
         {
-            throw new NotImplementedException();
+            var propfind = await webDavClient.Propfind(fromRemoteDir);
+
+            if (!propfind.IsSuccessful)
+            {
+                Console.WriteLine($"PROPFIND 失敗: {propfind.StatusCode}");
+                return;
+            }
+
+            var files = propfind.Resources
+                                .Where(r => !r.IsCollection) // 只抓檔案
+                                .ToList();
+
+            foreach (var file in files)
+            {
+                string fileName = Util.GetFileNameFromRelativeUrl(file.Uri);
+                string localPath = Path.Combine(toLocalDir, fileName);
+
+                Console.WriteLine($"下載中: {fileName}");
+
+                var fileResult = await webDavClient.GetRawFile(file.Uri);
+
+                if (!fileResult.IsSuccessful)
+                {
+                    Console.WriteLine($"下載失敗: {fileName}");
+                    continue;
+                }
+
+                using var fs = File.Create(localPath);
+                await fileResult.Stream.CopyToAsync(fs);
+            }
+        }
+
+        public async Task<string[]> GetDirs(DateTime? beginTime = null)
+        {
+
+
+            // 列出該資料夾下的所有項目
+            var result = await webDavClient.Propfind("./");
+
+            if (result.IsSuccessful)
+            {
+                // 過濾出資料夾
+                var folders = result.Resources
+                                    .Where(r => r.IsCollection) // 只選資料夾
+                                    .Select(r => r.DisplayName);
+
+                Console.WriteLine("資料夾清單:");
+                foreach (var folder in folders)
+                {
+                    Console.WriteLine(folder);
+                }
+
+                return folders.ToArray();
+            }
+            else
+            {
+                Console.WriteLine("列出資料夾失敗: " + result.StatusCode);
+                return new string[0];
+            }
         }
     }
 }

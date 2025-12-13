@@ -42,7 +42,7 @@ namespace youtbue下載介面.App
                 4 => new Feature
                 {
                     name = "資料夾雲端下載",
-                    action = _syncProcess.pull,
+                    action = _syncProcess.preparePull,
                     withCloud = true,
                 },
                 5 => new Feature

@@ -94,6 +94,16 @@ namespace youtbue下載介面.App
         {
             await _cloudHander.uploadFiles(dir);
         }
+        public async Task downloadFilesFrom(string FromRemoteDir,  string ToLocalDir)
+        {
+            await _cloudHander.downloadFiles(FromRemoteDir, ToLocalDir);
+        }
+
+        public async Task<string[]> GetCloudDirs()
+        {
+
+                return  _dataObject?.SongGroups.Select(r => r.Key).ToArray() ?? Array.Empty<string>();
+        }
 
         public async Task saveFileName(string filePath)
         {
@@ -154,16 +164,15 @@ namespace youtbue下載介面.App
         public void readFromBin()
         {
             string tempDataPath = Path.Combine(".", "tempData.bin");
-            DataObject dataObject;
             if (File.Exists(tempDataPath))
             {
-                dataObject = Data.ReadFromBinaryFile<DataObject>(Path.Combine(".", "tempData.bin"));
+                _dataObject = Data.ReadFromBinaryFile<DataObject>(Path.Combine(".", "tempData.bin"));
             }
             else
             {
-                dataObject = new DataObject();
+                _dataObject = new DataObject();
             }
-            _dataObject.SongGroups = dataObject.SongGroups;
+
         }
         public void writeToBin(DataObject? dataObject = null)
         {
