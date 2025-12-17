@@ -50,7 +50,8 @@ namespace youtbue下載介面.App
             }
 
             Console.WriteLine("\n下載完成。");
-            return fileStream;
+            fileStream.Dispose();
+            return new FileStream(_outputPath, FileMode.Open, FileAccess.Read, FileShare.None, 8192, true);
         }
     }
 
